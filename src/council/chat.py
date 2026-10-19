@@ -10,9 +10,8 @@ from typing import TYPE_CHECKING
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import HTML
 
-from council import render
+from council import providers, render
 from council.models import TranscriptEntry
-from council.providers import ProviderError, complete
 
 if TYPE_CHECKING:
     from council.engine import Engine
@@ -105,7 +104,7 @@ class ChatSession:
                 user = self.engine.build_user_prompt(member)
                 try:
                     with render.StreamRenderer(member.name) as sr:
-                        text = complete(
+                        text = providers.complete(
                             member,
                             system,
                             user,
@@ -115,7 +114,7 @@ class ChatSession:
                 except KeyboardInterrupt:
                     render.console.print("\n[yellow]⚡ Cancelled by user.[/yellow]\n")
                     return
-                except ProviderError as err:
+                except providers.ProviderError as err:
                     render.print_error(member.name, err)
                     continue
 
@@ -135,7 +134,7 @@ class ChatSession:
         user = self.engine.build_user_prompt(chair)
         try:
             with render.StreamRenderer(chair.name, is_chair=True) as sr:
-                text = complete(
+                text = providers.complete(
                     chair,
                     system,
                     user,
@@ -148,7 +147,7 @@ class ChatSession:
             )
         except KeyboardInterrupt:
             render.console.print("\n[yellow]⚡ Cancelled by user.[/yellow]\n")
-        except ProviderError as err:
+        except providers.ProviderError as err:
             render.print_error(chair.name, err)
 
     def _set_rounds(self, arg: str) -> None:

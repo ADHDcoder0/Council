@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from council import providers
 from council.costs import CostTracker
 from council.models import CouncilConfig, Member, TranscriptEntry
-from council.providers import ProviderError, complete
 
 
 class Engine:
@@ -70,14 +70,14 @@ class Engine:
             system = self.build_system_prompt(member)
             user = self.build_user_prompt(member)
             try:
-                text = complete(member, system, user, self.config.words)
+                text = providers.complete(member, system, user, self.config.words)
                 self.record_cost(member, system, user, text)
                 self.transcript.append(
                     TranscriptEntry(speaker=member.name, kind="member", text=text)
                 )
                 if on_result:
                     on_result(member, text)
-            except ProviderError as exc:
+            except providers.ProviderError as exc:
                 if on_error:
                     on_error(member, exc)
 
@@ -96,13 +96,13 @@ class Engine:
         system = self.build_system_prompt(chair)
         user = self.build_user_prompt(chair)
         try:
-            text = complete(chair, system, user, self.config.words)
+            text = providers.complete(chair, system, user, self.config.words)
             self.record_cost(chair, system, user, text)
             self.transcript.append(
                 TranscriptEntry(speaker=chair.name, kind="chair", text=text)
             )
             if on_result:
                 on_result(chair, text)
-        except ProviderError as exc:
+        except providers.ProviderError as exc:
             if on_error:
                 on_error(chair, exc)
