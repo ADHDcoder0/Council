@@ -193,39 +193,11 @@ class ChatSession:
             render.console.print("[yellow]Transcript is empty. Nothing to save.[/yellow]\n")
             return
 
-        sessions_dir = Path.home() / "council-sessions"
-        sessions_dir.mkdir(parents=True, exist_ok=True)
+        from council.session import save_session
 
-        if optional_path:
-            save_path = Path(optional_path)
-            if not save_path.is_absolute():
-                save_path = sessions_dir / save_path
-        else:
-            first_user_msg = next(
-                (e.text for e in self.engine.transcript if e.kind == "user"), "session"
-            )
-            slug = re.sub(r"[^\w\s-]", "", first_user_msg)[:40].strip().replace(" ", "-").lower()
-            if not slug:
-                slug = "session"
-            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-            save_path = sessions_dir / f"{timestamp}-{slug}.md"
-
-        lines = [
-            f"# Council Debate: {self.initial_topic or 'Session'}\n",
-            f"*Saved on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n---\n",
-        ]
-        for entry in self.engine.transcript:
-            if entry.kind == "user":
-                header = "**You**"
-            elif entry.kind == "chair":
-                header = f"**👑 {entry.speaker}**"
-            else:
-                header = f"**{entry.speaker}**"
-            lines.append(f"\n{header}:\n\n{entry.text}\n")
-
+        topic = self.initial_topic or "session"
         try:
-            save_path.parent.mkdir(parents=True, exist_ok=True)
-            save_path.write_text("\n".join(lines), encoding="utf-8")
-            render.console.print(f"[green]Session saved to {save_path}[/green]\n")
+            path = save_session(self.engine.transcript, topic=topic, optional_path=optional_path)
+            render.console.print(f"[green]Session saved to {path}[/green]\n")
         except OSError as e:
             render.console.print(f"[red]Failed to save session: {e}[/red]\n")
