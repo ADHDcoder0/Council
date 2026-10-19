@@ -115,8 +115,13 @@ def run(
 def chat(
     topic: str = typer.Argument(None, help="Optional starting topic"),
 ) -> None:
-    """Interactive session (Phase 2)."""
-    render.console.print("[yellow]council chat is coming in Phase 2.[/yellow]")
+    """Interactive debate session."""
+    from council.chat import ChatSession
+
+    config = _default_config()
+    engine = Engine(config)
+    session = ChatSession(engine, topic=topic)
+    session.start()
 
 
 @app.command()
