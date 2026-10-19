@@ -1,0 +1,65 @@
+"""Token counting and cost estimation using a pricing table."""
+
+from __future__ import annotations
+
+# Pricing per million tokens (input_price, output_price) in USD
+PRICE_TABLE: dict[str, tuple[float, float]] = {
+    # Anthropic
+    "claude-sonnet-5-5": (3.00, 15.00),
+    "claude-3-5-sonnet-20241022": (3.00, 15.00),
+    "claude-3-5-haiku-20241022": (0.80, 4.00),
+    # OpenAI
+    "gpt-4o": (2.50, 10.00),
+    "gpt-4o-mini": (0.15, 0.60),
+    "o1": (15.00, 60.00),
+    "o3-mini": (1.10, 4.40),
+    # Gemini
+    "gemini-2.5-flash": (0.15, 0.60),
+    "gemini-1.5-flash": (0.075, 0.30),
+    "gemini-1.5-pro": (1.25, 5.00),
+    # Fallback / OpenRouter average
+    "default": (1.50, 6.00),
+}
+
+# Standard approximation: ~1.3 tokens per word
+TOKENS_PER_WORD = 1.3
+
+
+class CostTracker:
+    """Tracks token volume and calculates estimated cost per session."""
+
+    def __init__(self) -> None:
+        self.total_input_tokens: int = 0
+        self.total_output_tokens: int = 0
+        self.total_cost_usd: float = 0.0
+
+    def record_turn(self, model: str, input_text: str, output_text: str) -> None:
+        """Record input and output text for a turn and accumulate estimated tokens and cost."""
+        in_words = len(input_text.split())
+        out_words = len(output_text.split())
+
+        in_tokens = max(1, int(in_words * TOKENS_PER_WORD))
+        out_tokens = max(1, int(out_words * TOKENS_PER_WORD))
+
+        self.total_input_tokens += in_tokens
+        self.total_output_tokens += out_tokens
+
+        # Lookup pricing (or match model prefix/substring)
+        pricing = PRICE_TABLE.get(model)
+        if not pricing:
+            for key, p in PRICE_TABLE.items():
+                if key in model or model in key:
+                    pricing = p
+                    break
+        if not pricing:
+            pricing = PRICE_TABLE["default"]
+
+        cost = (in_tokens * pricing[0] + out_tokens * pricing[1]) / 1_000_000.0
+        self.total_cost_usd += cost
+
+    def summary(self) -> str:
+        """Format a concise summary string."""
+        return (
+            f"Tokens: ~{self.total_input_tokens:,} in / ~{self.total_output_tokens:,} out  ·  "
+            f"Est. cost: ${self.total_cost_usd:.4f}"
+        )

@@ -51,6 +51,8 @@ class ChatSession:
                 render.console.print("\n[dim]Exiting council.[/dim]")
                 break
 
+        render.print_costs(self.engine.cost_tracker.summary())
+
     def _handle_input(self, text: str) -> None:
         if not text:
             return
@@ -102,8 +104,14 @@ class ChatSession:
                 system = self.engine.build_system_prompt(member)
                 user = self.engine.build_user_prompt(member)
                 try:
-                    with render.start_spinner(member.name):
-                        text = complete(member, system, user, self.engine.config.words)
+                    with render.StreamRenderer(member.name) as sr:
+                        text = complete(
+                            member,
+                            system,
+                            user,
+                            self.engine.config.words,
+                            on_token=sr.on_token,
+                        )
                 except KeyboardInterrupt:
                     render.console.print("\n[yellow]⚡ Cancelled by user.[/yellow]\n")
                     return
@@ -111,10 +119,10 @@ class ChatSession:
                     render.print_error(member.name, err)
                     continue
 
+                self.engine.record_cost(member, system, user, text)
                 self.engine.transcript.append(
                     TranscriptEntry(speaker=member.name, kind="member", text=text)
                 )
-                render.print_member_response(member.name, text)
 
     def _run_chair(self) -> None:
         """Request a summary from the chair, interruptible with Ctrl+C."""
@@ -126,12 +134,18 @@ class ChatSession:
         system = self.engine.build_system_prompt(chair)
         user = self.engine.build_user_prompt(chair)
         try:
-            with render.start_spinner(chair.name):
-                text = complete(chair, system, user, self.engine.config.words)
+            with render.StreamRenderer(chair.name, is_chair=True) as sr:
+                text = complete(
+                    chair,
+                    system,
+                    user,
+                    self.engine.config.words,
+                    on_token=sr.on_token,
+                )
+            self.engine.record_cost(chair, system, user, text)
             self.engine.transcript.append(
                 TranscriptEntry(speaker=chair.name, kind="chair", text=text)
             )
-            render.print_member_response(chair.name, text, is_chair=True)
         except KeyboardInterrupt:
             render.console.print("\n[yellow]⚡ Cancelled by user.[/yellow]\n")
         except ProviderError as err:

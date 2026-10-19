@@ -1,17 +1,19 @@
-"""Debate engine — transcript management and round-robin execution."""
+"""Debate engine — transcript management, cost tracking, and turn execution."""
 
 from __future__ import annotations
 
+from council.costs import CostTracker
 from council.models import CouncilConfig, Member, TranscriptEntry
 from council.providers import ProviderError, complete
 
 
 class Engine:
-    """Owns the transcript and drives round-robin debate turns."""
+    """Owns the transcript, cost tracking, and drives debate turns."""
 
     def __init__(self, config: CouncilConfig) -> None:
         self.config = config
         self.transcript: list[TranscriptEntry] = []
+        self.cost_tracker: CostTracker = CostTracker()
 
     # ── Transcript helpers ────────────────────────────────────────────────
 
@@ -45,6 +47,14 @@ class Engine:
         lines.append(f"\nIt is your turn, {member.name}.")
         return "\n".join(lines)
 
+    def record_cost(self, member: Member, system: str, user: str, output: str) -> None:
+        """Record input and output tokens for cost calculation."""
+        self.cost_tracker.record_turn(
+            model=member.model,
+            input_text=f"{system}\n{user}",
+            output_text=output,
+        )
+
     # ── Round execution ───────────────────────────────────────────────────
 
     def run_round(
@@ -53,14 +63,7 @@ class Engine:
         on_result=None,
         on_error=None,
     ) -> None:
-        """
-        Run one round: each active member speaks in config order.
-
-        Callbacks:
-            on_start(member)        — called before each provider call
-            on_result(member, text) — called after a successful call
-            on_error(member, error) — called on failure; round continues
-        """
+        """Run one round: each active member speaks in config order."""
         for member in self.active_members():
             if on_start:
                 on_start(member)
@@ -68,6 +71,7 @@ class Engine:
             user = self.build_user_prompt(member)
             try:
                 text = complete(member, system, user, self.config.words)
+                self.record_cost(member, system, user, text)
                 self.transcript.append(
                     TranscriptEntry(speaker=member.name, kind="member", text=text)
                 )
@@ -83,7 +87,7 @@ class Engine:
         on_result=None,
         on_error=None,
     ) -> None:
-        """Ask the chair for a summary.  No-op if no chair is configured."""
+        """Ask the chair for a summary."""
         chair = self.chair()
         if chair is None:
             return
@@ -93,6 +97,7 @@ class Engine:
         user = self.build_user_prompt(chair)
         try:
             text = complete(chair, system, user, self.config.words)
+            self.record_cost(chair, system, user, text)
             self.transcript.append(
                 TranscriptEntry(speaker=chair.name, kind="chair", text=text)
             )
