@@ -408,3 +408,9 @@ def test_404_not_found():
         json={"is_muted": True},
     )
     assert res2.status_code == 404
+
+
+def test_spa_static_serving():
+    res = client.get("/")
+    assert res.status_code == 200
+    assert "Council" in res.text
