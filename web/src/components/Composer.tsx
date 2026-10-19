@@ -39,47 +39,48 @@ export const Composer: React.FC<ComposerProps> = ({
   };
 
   return (
-    <div className="border-t border-zinc-800 bg-zinc-900/80 p-3 md:p-4 shrink-0">
-      <div className="flex flex-col space-y-3">
+    <div className="border-t border-[var(--council-border)] bg-[var(--council-surface-1)] p-3 md:p-4 shrink-0 transition-colors">
+      <div className="max-w-4xl mx-auto flex flex-col space-y-3">
         {/* Input box */}
-        <div className="relative flex items-end bg-zinc-950 border border-zinc-800 rounded-xl p-2 focus-within:border-indigo-500/80 focus-within:ring-1 focus-within:ring-indigo-500/50 transition">
+        <div className="relative flex items-end bg-[var(--council-canvas)] border border-[var(--council-border)] rounded-lg p-2 focus-within:border-[var(--council-accent)] transition">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type your message, counterargument, or steering prompt... (Ctrl+Enter to send)"
+            placeholder="Steer the council or add a counterargument…  Ctrl + Enter to send"
             rows={2}
-            className="w-full bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none resize-none px-2 py-1 max-h-32"
+            className="w-full bg-transparent text-xs text-[var(--council-text)] placeholder-[var(--council-text-faint)] focus:outline-none resize-none px-2 py-1 max-h-28"
           />
           <button
             onClick={handleSend}
             disabled={!inputText.trim() || isStreaming}
-            className="ml-2 p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white transition shrink-0"
+            className="ml-2 px-3 py-1.5 rounded-md bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] border border-[var(--council-border)] disabled:opacity-40 text-[var(--council-text)] text-xs font-medium transition flex items-center space-x-1 shrink-0"
             title="Inject message into transcript"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Interject</span>
           </button>
         </div>
 
         {/* Action Controls Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Rounds Selector & Run Round */}
-            <div className="inline-flex rounded-lg shadow-sm border border-zinc-700 bg-zinc-800">
+            <div className="inline-flex rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] overflow-hidden shadow-sm">
               <button
                 onClick={() => onRunRound(roundsCount)}
                 disabled={isStreaming}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-l-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold transition"
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-[var(--council-accent)] hover:opacity-90 disabled:opacity-50 text-[var(--bg-canvas)] text-xs font-semibold transition"
                 title={`Run ${roundsCount} debate round(s)`}
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Run Round</span>
+                <span>{isStreaming ? "Running…" : "Run round"}</span>
               </button>
               <select
                 value={roundsCount}
                 onChange={(e) => setRoundsCount(Number(e.target.value))}
                 disabled={isStreaming}
-                className="bg-zinc-800 text-zinc-200 text-xs px-2 py-1.5 rounded-r-lg border-l border-zinc-700 focus:outline-none cursor-pointer"
+                className="bg-[var(--council-surface-2)] text-[var(--council-text)] text-xs px-2 py-1.5 border-l border-[var(--council-border)] focus:outline-none cursor-pointer"
                 title="Number of rounds"
               >
                 <option value={1}>1 round</option>
@@ -94,11 +95,11 @@ export const Composer: React.FC<ComposerProps> = ({
               <button
                 onClick={onRunSummary}
                 disabled={isStreaming}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-amber-700/60 bg-amber-950/40 hover:bg-amber-900/50 disabled:opacity-50 text-amber-300 text-xs font-medium transition"
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] disabled:opacity-50 text-[var(--council-text)] text-xs font-medium transition"
                 title="Ask the chair for a synthesized summary"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Summary</span>
+                <Sparkles className="w-3.5 h-3.5 text-[var(--council-warning)]" />
+                <span>Ask Chair</span>
               </button>
             )}
 
@@ -106,24 +107,24 @@ export const Composer: React.FC<ComposerProps> = ({
             <button
               onClick={onRunModerator}
               disabled={isStreaming}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-200 text-xs font-medium transition"
-              title="Let the moderator pick the next speaker dynamically (up to 12 turns)"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] disabled:opacity-50 text-[var(--council-text)] text-xs font-medium transition"
+              title="Let the moderator dynamically choose the next speaker"
             >
-              <Compass className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Moderator Turn</span>
+              <Compass className="w-3.5 h-3.5 text-[var(--council-accent)]" />
+              <span>Moderator turn</span>
             </button>
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* Stop / Cancel Stream button */}
+            {/* Stop Active Member button */}
             {isStreaming && (
               <button
                 onClick={onStop}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition animate-pulse"
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition animate-pulse"
                 title="Cancel ongoing completion"
               >
                 <Square className="w-3.5 h-3.5 fill-current" />
-                <span>Stop</span>
+                <span>Stop member</span>
               </button>
             )}
 
@@ -131,11 +132,11 @@ export const Composer: React.FC<ComposerProps> = ({
             <button
               onClick={onSave}
               disabled={isStreaming}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-300 text-xs font-medium transition"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] disabled:opacity-50 text-[var(--council-text-muted)] hover:text-[var(--council-text)] text-xs font-medium transition"
               title="Save markdown to ~/council-sessions/"
             >
               <Bookmark className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Save Session</span>
+              <span className="hidden sm:inline">Save session</span>
             </button>
           </div>
         </div>

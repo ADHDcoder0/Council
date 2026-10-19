@@ -1,0 +1,10 @@
+{
+  "description": "Facilitates structured debates among AI models, allowing users to manage discussions, summarize outcomes, and track costs efficiently.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

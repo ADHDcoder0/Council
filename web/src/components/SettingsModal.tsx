@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { X, Save, Plus, Trash2, Sliders, Users, DollarSign } from "lucide-react";
-import { CouncilConfig, MemberInfo } from "../types";
+import { X, Save, Plus, Trash2, Sliders, Users, DollarSign, Crown } from "lucide-react";
+import { CouncilConfig, getMemberTone } from "../types";
 import { fetchConfig, saveConfig, fetchPrices, savePrices } from "../api";
 
 interface SettingsModalProps {
@@ -14,7 +14,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   onConfigSaved,
 }) => {
-  const [activeTab, setActiveTab] = useState<"settings" | "members" | "pricing">("settings");
+  const [activeTab, setActiveTab] = useState<"runtime" | "members" | "prices">("runtime");
   const [config, setConfig] = useState<CouncilConfig | null>(null);
   const [prices, setPrices] = useState<Record<string, [number, number]>>({});
   const [saving, setSaving] = useState(false);
@@ -52,12 +52,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setConfig({ ...config, members: updated });
   };
 
+  const handleSelectChair = (chairIdx: number) => {
+    const updated = config.members.map((m, i) => ({
+      ...m,
+      chair: i === chairIdx,
+    }));
+    setConfig({ ...config, members: updated });
+  };
+
   const handleAddMember = () => {
+    const number = config.members.length + 1;
     const newMember = {
-      name: "Debater",
-      provider: "openai",
-      model: "gpt-4o",
-      role: "Provides arguments and analysis.",
+      name: `Debater ${number}`,
+      provider: "openrouter",
+      model: "openai/gpt-4o-mini",
+      role: "A focused perspective added for this debate.",
       chair: false,
       muted: false,
     };
@@ -65,35 +74,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleRemoveMember = (idx: number) => {
+    if (config.members.length <= 2) return;
     const updated = config.members.filter((_, i) => i !== idx);
     setConfig({ ...config, members: updated });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col shadow-2xl max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in select-none">
+      <div className="w-full max-w-2xl bg-[var(--council-surface-1)] border border-[var(--council-border-strong)] rounded-xl flex flex-col shadow-2xl max-h-[90vh] overflow-hidden transition-colors">
         {/* Header */}
-        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+        <div className="p-4 border-b border-[var(--council-border)] flex items-center justify-between bg-[var(--council-surface-2)]">
           <div className="flex items-center space-x-2">
-            <Sliders className="w-4 h-4 text-indigo-400" />
-            <h3 className="font-semibold text-sm text-white">Council Settings & Personas</h3>
+            <Sliders className="w-4 h-4 text-[var(--council-accent)]" />
+            <h3 className="font-semibold text-sm text-[var(--council-text)]">
+              Council settings
+            </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+            className="p-1 rounded-md text-[var(--council-text-muted)] hover:text-[var(--council-text)] hover:bg-[var(--council-surface-3)] transition"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-zinc-800 px-4 bg-zinc-950/40">
+        <div className="flex border-b border-[var(--council-border)] px-4 bg-[var(--council-surface-2)]">
           <button
-            onClick={() => setActiveTab("settings")}
+            onClick={() => setActiveTab("runtime")}
             className={`flex items-center space-x-1.5 py-2.5 px-3 text-xs font-medium border-b-2 transition ${
-              activeTab === "settings"
-                ? "border-indigo-500 text-indigo-400"
-                : "border-transparent text-zinc-400 hover:text-zinc-200"
+              activeTab === "runtime"
+                ? "border-[var(--council-accent)] text-[var(--council-text)] font-semibold"
+                : "border-transparent text-[var(--council-text-muted)] hover:text-[var(--council-text)]"
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -103,19 +115,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onClick={() => setActiveTab("members")}
             className={`flex items-center space-x-1.5 py-2.5 px-3 text-xs font-medium border-b-2 transition ${
               activeTab === "members"
-                ? "border-indigo-500 text-indigo-400"
-                : "border-transparent text-zinc-400 hover:text-zinc-200"
+                ? "border-[var(--council-accent)] text-[var(--council-text)] font-semibold"
+                : "border-transparent text-[var(--council-text-muted)] hover:text-[var(--council-text)]"
             }`}
           >
             <Users className="w-3.5 h-3.5" />
             <span>Members & Personas ({config.members.length})</span>
           </button>
           <button
-            onClick={() => setActiveTab("pricing")}
+            onClick={() => setActiveTab("prices")}
             className={`flex items-center space-x-1.5 py-2.5 px-3 text-xs font-medium border-b-2 transition ${
-              activeTab === "pricing"
-                ? "border-indigo-500 text-indigo-400"
-                : "border-transparent text-zinc-400 hover:text-zinc-200"
+              activeTab === "prices"
+                ? "border-[var(--council-accent)] text-[var(--council-text)] font-semibold"
+                : "border-transparent text-[var(--council-text-muted)] hover:text-[var(--council-text)]"
             }`}
           >
             <DollarSign className="w-3.5 h-3.5" />
@@ -124,54 +136,65 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {activeTab === "settings" && (
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block text-zinc-300 font-medium mb-1">
-                  Words per turn ({config.settings.words} words)
-                </label>
-                <input
-                  type="range"
-                  min={30}
-                  max={500}
-                  step={10}
-                  value={config.settings.words}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
-                      settings: { ...config.settings, words: Number(e.target.value) },
-                    })
-                  }
-                  className="w-full accent-indigo-500"
-                />
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+          {activeTab === "runtime" && (
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <span className="font-semibold text-xs text-[var(--council-text)]">
+                  Rules and runtime
+                </span>
+                <p className="text-[11px] text-[var(--council-text-muted)]">
+                  Set response limits and shared debate constraints.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block text-[var(--council-text)] font-medium mb-1">
+                    Words per turn
+                  </label>
+                  <select
+                    value={config.settings.words}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        settings: { ...config.settings, words: Number(e.target.value) },
+                      })
+                    }
+                    className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-md p-2 text-[var(--council-text)] focus:outline-none focus:border-[var(--council-accent)]"
+                  >
+                    <option value={80}>80 words · concise</option>
+                    <option value={120}>120 words · balanced</option>
+                    <option value={200}>200 words · detailed</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[var(--council-text)] font-medium mb-1">
+                    Prompt window (lookback entries)
+                  </label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={100}
+                    value={config.settings.window}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        settings: { ...config.settings, window: Number(e.target.value) },
+                      })
+                    }
+                    className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-md p-2 text-[var(--council-text)] focus:outline-none focus:border-[var(--council-accent)] font-mono"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">
-                  Prompt Window (lookback entries)
-                </label>
-                <input
-                  type="number"
-                  min={5}
-                  max={100}
-                  value={config.settings.window}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
-                      settings: { ...config.settings, window: Number(e.target.value) },
-                    })
-                  }
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-zinc-200 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-zinc-300 font-medium mb-1">
-                  Debate Rules & System Constraints
+                <label className="block text-[var(--council-text)] font-medium mb-1">
+                  Debate rules & system constraints
                 </label>
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={config.settings.rules}
                   onChange={(e) =>
                     setConfig({
@@ -179,114 +202,165 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       settings: { ...config.settings, rules: e.target.value },
                     })
                   }
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-zinc-200 focus:outline-none focus:border-indigo-500 leading-relaxed"
+                  className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-md p-2.5 text-[var(--council-text)] focus:outline-none focus:border-[var(--council-accent)] leading-relaxed font-mono text-[11px]"
                 />
               </div>
             </div>
           )}
 
           {activeTab === "members" && (
-            <div className="space-y-4 text-xs">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Configure council debaters and chair.</span>
+                <div>
+                  <span className="font-semibold text-xs text-[var(--council-text)] block">
+                    Members and personas
+                  </span>
+                  <p className="text-[11px] text-[var(--council-text-muted)]">
+                    Configure debaters and select exactly one chair.
+                  </p>
+                </div>
                 <button
                   onClick={handleAddMember}
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition"
+                  className="flex items-center space-x-1 px-2.5 py-1.5 rounded-md bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] border border-[var(--council-border)] text-[var(--council-text)] text-xs font-medium transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add Member</span>
+                  <span>Add member</span>
                 </button>
               </div>
 
               <div className="space-y-3">
-                {config.members.map((m, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 bg-zinc-950 border border-zinc-800 rounded-lg space-y-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <input
-                        type="text"
-                        value={m.name}
-                        onChange={(e) => handleMemberChange(idx, "name", e.target.value)}
-                        placeholder="Member name"
-                        className="font-semibold text-white bg-transparent border-b border-zinc-700 focus:border-indigo-500 focus:outline-none px-1 py-0.5 text-sm"
-                      />
-                      <div className="flex items-center space-x-2">
-                        <label className="flex items-center space-x-1 text-zinc-400 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={m.chair || false}
-                            onChange={(e) => handleMemberChange(idx, "chair", e.target.checked)}
-                            className="rounded accent-amber-500"
-                          />
-                          <span className="text-[11px]">Chair</span>
-                        </label>
-                        <button
-                          onClick={() => handleRemoveMember(idx)}
-                          className="p-1 rounded text-red-400 hover:bg-zinc-800 transition"
-                          title="Remove member"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                {config.members.map((m, idx) => {
+                  const tone = getMemberTone(m.name, m.chair);
+                  const getToneColor = () => {
+                    switch (tone) {
+                      case "chair":
+                        return "var(--member-chair)";
+                      case "skeptic":
+                        return "var(--member-skeptic)";
+                      case "builder":
+                        return "var(--member-builder)";
+                      case "visionary":
+                        return "var(--member-visionary)";
+                      default:
+                        return "var(--member-builder)";
+                    }
+                  };
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] text-zinc-500 block">Provider</label>
-                        <select
-                          value={m.provider}
-                          onChange={(e) => handleMemberChange(idx, "provider", e.target.value)}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded p-1 text-zinc-300"
-                        >
-                          <option value="anthropic">Anthropic</option>
-                          <option value="openai">OpenAI</option>
-                          <option value="gemini">Gemini</option>
-                          <option value="openrouter">OpenRouter</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-zinc-500 block">Model ID</label>
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        borderLeftColor: getToneColor(),
+                        borderLeftWidth: "2px",
+                      }}
+                      className="p-3 bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-lg space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
                         <input
                           type="text"
-                          value={m.model}
-                          onChange={(e) => handleMemberChange(idx, "model", e.target.value)}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded p-1 text-zinc-300"
+                          value={m.name}
+                          onChange={(e) => handleMemberChange(idx, "name", e.target.value)}
+                          placeholder="Member name"
+                          className="font-semibold text-[var(--council-text)] bg-transparent border-b border-[var(--council-border)] focus:border-[var(--council-accent)] focus:outline-none px-1 py-0.5 text-xs"
+                        />
+                        <div className="flex items-center space-x-3">
+                          <label className="flex items-center space-x-1 text-[var(--council-text-muted)] cursor-pointer">
+                            <input
+                              type="radio"
+                              name="chair-select"
+                              checked={m.chair || false}
+                              onChange={() => handleSelectChair(idx)}
+                              className="accent-[var(--council-accent)]"
+                            />
+                            <span className="text-[11px] font-medium flex items-center space-x-0.5">
+                              <Crown className="w-3 h-3 text-[var(--council-warning)]" />
+                              <span>Chair</span>
+                            </span>
+                          </label>
+
+                          <button
+                            onClick={() => handleRemoveMember(idx)}
+                            disabled={config.members.length <= 2}
+                            className="p-1 rounded text-[var(--council-text-muted)] hover:text-[var(--council-danger)] disabled:opacity-30 transition"
+                            title="Remove member"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-[var(--council-text-faint)] block mb-0.5">
+                            Provider
+                          </label>
+                          <select
+                            value={m.provider}
+                            onChange={(e) => handleMemberChange(idx, "provider", e.target.value)}
+                            className="w-full bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded p-1.5 text-[var(--council-text)] text-xs"
+                          >
+                            <option value="anthropic">Anthropic</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="gemini">Google Gemini</option>
+                            <option value="openrouter">OpenRouter</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-[var(--council-text-faint)] block mb-0.5">
+                            Model ID
+                          </label>
+                          <input
+                            type="text"
+                            value={m.model}
+                            onChange={(e) => handleMemberChange(idx, "model", e.target.value)}
+                            className="w-full bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded p-1.5 text-[var(--council-text)] font-mono text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-[var(--council-text-faint)] block mb-0.5">
+                          Role & Perspective
+                        </label>
+                        <input
+                          type="text"
+                          value={m.role}
+                          onChange={(e) => handleMemberChange(idx, "role", e.target.value)}
+                          className="w-full bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded p-1.5 text-[var(--council-text)] text-xs"
                         />
                       </div>
                     </div>
-
-                    <div>
-                      <label className="text-[10px] text-zinc-500 block">Role / Persona</label>
-                      <input
-                        type="text"
-                        value={m.role}
-                        onChange={(e) => handleMemberChange(idx, "role", e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded p-1 text-zinc-300"
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {activeTab === "pricing" && (
-            <div className="space-y-3 text-xs">
-              <p className="text-zinc-400">
-                Override prices per 1,000,000 tokens (saved to <code>~/.config/council/prices.toml</code>):
-              </p>
-              <div className="space-y-2">
-                {Object.entries(prices).map(([model, [inPrice, outPrice]]) => (
-                  <div
-                    key={model}
-                    className="flex items-center justify-between p-2 bg-zinc-950 border border-zinc-800 rounded"
-                  >
-                    <span className="font-mono text-zinc-300 truncate max-w-[200px]">{model}</span>
-                    <div className="flex items-center space-x-2">
+          {activeTab === "prices" && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <span className="font-semibold text-xs text-[var(--council-text)] block">
+                  Pricing table
+                </span>
+                <p className="text-[11px] text-[var(--council-text-muted)]">
+                  Override prices per 1,000,000 tokens (saved locally to <code>~/.config/council/prices.toml</code>):
+                </p>
+              </div>
+
+              <div className="border border-[var(--council-border)] rounded-lg overflow-hidden bg-[var(--council-surface-2)]">
+                <div className="grid grid-cols-3 p-2.5 font-mono text-[10px] uppercase text-[var(--council-text-faint)] border-b border-[var(--council-border)]">
+                  <span>Model</span>
+                  <span>Input / 1M ($)</span>
+                  <span>Output / 1M ($)</span>
+                </div>
+                <div className="divide-y divide-[var(--council-border)]">
+                  {Object.entries(prices).map(([model, [inPrice, outPrice]]) => (
+                    <div key={model} className="grid grid-cols-3 items-center p-2 text-xs">
+                      <code className="text-[var(--council-text)] font-mono truncate mr-2">
+                        {model}
+                      </code>
                       <div className="flex items-center space-x-1">
-                        <span className="text-[10px] text-zinc-500">In: $</span>
+                        <span className="text-[var(--council-text-faint)]">$</span>
                         <input
                           type="number"
                           step="0.01"
@@ -297,11 +371,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               [model]: [Number(e.target.value), outPrice],
                             })
                           }
-                          className="w-16 bg-zinc-900 border border-zinc-800 rounded p-0.5 text-right font-mono text-zinc-200"
+                          className="w-20 bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded p-1 text-right font-mono text-xs text-[var(--council-text)]"
                         />
                       </div>
                       <div className="flex items-center space-x-1">
-                        <span className="text-[10px] text-zinc-500">Out: $</span>
+                        <span className="text-[var(--council-text-faint)]">$</span>
                         <input
                           type="number"
                           step="0.01"
@@ -312,22 +386,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               [model]: [inPrice, Number(e.target.value)],
                             })
                           }
-                          className="w-16 bg-zinc-900 border border-zinc-800 rounded p-0.5 text-right font-mono text-zinc-200"
+                          className="w-20 bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded p-1 text-right font-mono text-xs text-[var(--council-text)]"
                         />
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-zinc-800 flex items-center justify-between bg-zinc-950/40">
+        <div className="p-4 border-t border-[var(--council-border)] flex items-center justify-between bg-[var(--council-surface-2)]">
           <div>
             {statusMessage && (
-              <span className={`text-xs ${statusMessage.startsWith("Error") ? "text-red-400" : "text-emerald-400"}`}>
+              <span className={`text-xs ${statusMessage.startsWith("Error") ? "text-[var(--council-danger)]" : "text-[var(--council-accent)]"}`}>
                 {statusMessage}
               </span>
             )}
@@ -335,17 +409,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition"
+              className="px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-1)] hover:bg-[var(--council-surface-hover)] text-[var(--council-text-muted)] hover:text-[var(--council-text)] text-xs font-medium transition"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveConfig}
               disabled={saving}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold transition"
+              className="flex items-center space-x-1.5 px-4 py-1.5 rounded-md bg-[var(--council-accent)] hover:opacity-90 disabled:opacity-50 text-[var(--bg-canvas)] text-xs font-semibold transition shadow-sm"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{saving ? "Saving..." : "Save Settings"}</span>
+              <span>{saving ? "Saving…" : "Save settings"}</span>
             </button>
           </div>
         </div>

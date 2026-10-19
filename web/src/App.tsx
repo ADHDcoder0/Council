@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Header } from "./components/Header";
 import { MemberSidebar } from "./components/MemberSidebar";
 import { TranscriptView } from "./components/TranscriptView";
+import { WorkbenchView } from "./components/WorkbenchView";
+import { ArenaView } from "./components/ArenaView";
 import { Composer } from "./components/Composer";
 import { CostFooter } from "./components/CostFooter";
 import { HistoryDrawer } from "./components/HistoryDrawer";
@@ -17,11 +19,15 @@ import {
   saveSessionToDisk,
   resumeSessionFromFile,
   fetchApiKeys,
+  fetchConfig,
 } from "./api";
-import { MemberInfo, SessionResponse, TranscriptEntry } from "./types";
+import { Direction, MemberInfo, SessionResponse, TranscriptEntry, getMemberTone } from "./types";
 import { Key } from "lucide-react";
 
 export function App() {
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [direction, setDirection] = useState<Direction>("thread");
+
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [members, setMembers] = useState<MemberInfo[]>([]);
@@ -39,6 +45,19 @@ export function App() {
   const [hasAnyKey, setHasAnyKey] = useState(true);
   const [editingMember, setEditingMember] = useState<MemberInfo | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sync theme to root DOM class
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
 
   const checkKeys = useCallback(async () => {
     try {
@@ -84,13 +103,18 @@ export function App() {
     const initDefaultSession = async () => {
       try {
         const s = await createSession(
-          "Should engineers choose a modular monolith or microservices by default?",
+          "Should engineering teams prefer a modular monolith over microservices by default?",
           120,
           1
         );
         setSession(s);
         setTranscript(s.transcript);
-        setMembers(s.members);
+        setMembers(
+          s.members.map((m) => ({
+            ...m,
+            tone: getMemberTone(m.name, m.is_chair),
+          }))
+        );
         setTotals({
           inputTokens: s.total_input_tokens,
           outputTokens: s.total_output_tokens,
@@ -113,7 +137,12 @@ export function App() {
       const s = await createSession(topic, words, rounds);
       setSession(s);
       setTranscript(s.transcript);
-      setMembers(s.members);
+      setMembers(
+        s.members.map((m) => ({
+          ...m,
+          tone: getMemberTone(m.name, m.is_chair),
+        }))
+      );
       setTotals({
         inputTokens: s.total_input_tokens,
         outputTokens: s.total_output_tokens,
@@ -129,7 +158,7 @@ export function App() {
   const handleSendMessage = async (text: string) => {
     if (!session) return;
     try {
-      const updated = await addMessage(session.session_id, "User", text);
+      const updated = await addMessage(session.session_id, "You", text);
       setTranscript(updated.transcript);
     } catch (err: any) {
       showToast(`Error adding message: ${err.message}`);
@@ -145,6 +174,7 @@ export function App() {
       setMembers((prev) =>
         prev.map((m) => (m.name === name ? { ...m, is_muted: updated.is_muted } : m))
       );
+      showToast(`${name} ${!currentMuted ? "muted" : "unmuted"}.`);
     } catch (err: any) {
       showToast(`Error: ${err.message}`);
     }
@@ -181,14 +211,19 @@ export function App() {
       const s = await resumeSessionFromFile(filepath);
       setSession(s);
       setTranscript(s.transcript);
-      setMembers(s.members);
+      setMembers(
+        s.members.map((m) => ({
+          ...m,
+          tone: getMemberTone(m.name, m.is_chair),
+        }))
+      );
       setTotals({
         inputTokens: s.total_input_tokens,
         outputTokens: s.total_output_tokens,
         totalCostUsd: s.total_cost_usd,
         isEstimated: s.is_cost_estimated,
       });
-      showToast(`Resumed session: ${s.topic}`);
+      showToast(`Resumed debate: ${s.topic}`);
     } catch (err: any) {
       showToast(`Error resuming session: ${err.message}`);
     }
@@ -202,18 +237,23 @@ export function App() {
   const hasChair = members.some((m) => m.is_chair);
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
-      {/* Toast Notification */}
+    <div className="flex flex-col h-screen bg-[var(--council-canvas)] text-[var(--council-text)] overflow-hidden font-sans transition-colors">
+      {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-16 right-4 z-50 px-4 py-2 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg shadow-xl animate-fade-in flex items-center space-x-2">
+        <div className="fixed top-16 right-4 z-50 px-3.5 py-2 bg-[var(--council-surface-1)] border border-[var(--council-border-strong)] text-[var(--council-text)] text-xs rounded-lg shadow-2xl flex items-center space-x-2 animate-fade-in font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--council-accent)]" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Header */}
+      {/* Redesigned App Header */}
       <Header
         topic={session?.topic || ""}
         sessionId={session?.session_id || null}
+        direction={direction}
+        theme={theme}
+        onDirectionChange={setDirection}
+        onToggleTheme={toggleTheme}
         onNewDebate={() => setIsNewDebateOpen(true)}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -221,52 +261,112 @@ export function App() {
         onExport={handleExport}
       />
 
-      {/* Main Workspace Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar: Members */}
-        <MemberSidebar
-          members={members}
-          activeSpeaker={activeSpeaker}
-          onToggleMute={handleToggleMute}
-          onEditMember={(m) => setEditingMember(m)}
-        />
-
-        {/* Center: Transcript + Composer */}
-        <main className="flex-1 flex flex-col min-w-0 bg-zinc-950">
-          {!hasAnyKey && (
-            <div className="mx-4 mt-3 p-3 rounded-lg bg-amber-950/40 border border-amber-800/80 flex items-center justify-between text-xs text-amber-200 shrink-0">
-              <div className="flex items-center space-x-2">
-                <Key className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>No API keys configured yet. Enter your Anthropic, OpenAI, Gemini, or OpenRouter keys to start debating.</span>
-              </div>
-              <button
-                onClick={() => setIsKeysOpen(true)}
-                className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs transition shrink-0 ml-3 shadow-sm"
-              >
-                Enter Keys
-              </button>
+      {/* Main Deliberation Stage */}
+      <div className="flex-1 flex overflow-hidden min-h-0 relative">
+        {/* Missing API keys notification banner */}
+        {!hasAnyKey && (
+          <div className="absolute top-2 left-4 right-4 z-20 px-3.5 py-2 rounded-lg bg-[var(--council-surface-1)] border border-[var(--council-warning)]/60 text-xs flex items-center justify-between shadow-lg">
+            <div className="flex items-center space-x-2 text-[var(--council-warning)]">
+              <Key className="w-4 h-4 shrink-0" />
+              <span>No API keys configured yet. Add your Anthropic, OpenAI, Gemini, or OpenRouter keys to run rounds.</span>
             </div>
-          )}
+            <button
+              onClick={() => setIsKeysOpen(true)}
+              className="px-2.5 py-1 rounded bg-[var(--council-accent)] text-[var(--bg-canvas)] font-semibold text-xs transition shrink-0 ml-3 shadow-sm hover:opacity-90"
+            >
+              Enter keys
+            </button>
+          </div>
+        )}
 
-          <TranscriptView
-            transcript={transcript}
-            topic={session?.topic || ""}
-          />
+        {/* Direction 1: The Deliberation (Thread reading mode) */}
+        {direction === "thread" && (
+          <div className="flex-1 flex overflow-hidden">
+            <MemberSidebar
+              members={members}
+              activeSpeaker={activeSpeaker}
+              onToggleMute={handleToggleMute}
+              onEditMember={(m) => setEditingMember(m)}
+            />
+            <main className="flex-1 flex flex-col min-w-0 bg-[var(--council-canvas)]">
+              <TranscriptView
+                transcript={transcript}
+                topic={session?.topic || ""}
+                onRetrySpeaker={(name) => startStream("rounds", { rounds: 1 })}
+                onOpenKeys={() => setIsKeysOpen(true)}
+                onNewDebate={() => setIsNewDebateOpen(true)}
+              />
+              <Composer
+                isStreaming={isStreaming}
+                onSendMessage={handleSendMessage}
+                onRunRound={(rounds) => startStream("rounds", { rounds })}
+                onRunSummary={() => startStream("summary", {})}
+                onRunModerator={() => startStream("moderator", {})}
+                onStop={abortStream}
+                onSave={handleSaveSession}
+                hasChair={hasChair}
+              />
+            </main>
+          </div>
+        )}
 
-          <Composer
-            isStreaming={isStreaming}
-            onSendMessage={handleSendMessage}
-            onRunRound={(rounds) => startStream("rounds", { rounds })}
-            onRunSummary={() => startStream("summary", {})}
-            onRunModerator={() => startStream("moderator", {})}
-            onStop={abortStream}
-            onSave={handleSaveSession}
-            hasChair={hasChair}
-          />
-        </main>
+        {/* Direction 2: The Workbench (3-panel modular workspace) */}
+        {direction === "workbench" && (
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <WorkbenchView
+              members={members}
+              transcript={transcript}
+              topic={session?.topic || ""}
+              activeSpeaker={activeSpeaker}
+              totals={totals}
+              onToggleMute={handleToggleMute}
+              onEditMember={(m) => setEditingMember(m)}
+              onRetrySpeaker={(name) => startStream("rounds", { rounds: 1 })}
+              onOpenKeys={() => setIsKeysOpen(true)}
+              onNewDebate={() => setIsNewDebateOpen(true)}
+            />
+            <Composer
+              isStreaming={isStreaming}
+              onSendMessage={handleSendMessage}
+              onRunRound={(rounds) => startStream("rounds", { rounds })}
+              onRunSummary={() => startStream("summary", {})}
+              onRunModerator={() => startStream("moderator", {})}
+              onStop={abortStream}
+              onSave={handleSaveSession}
+              hasChair={hasChair}
+            />
+          </div>
+        )}
+
+        {/* Direction 3: The Roundtable (Arena mode) */}
+        {direction === "arena" && (
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <ArenaView
+              members={members}
+              transcript={transcript}
+              topic={session?.topic || ""}
+              activeSpeaker={activeSpeaker}
+              onToggleMute={handleToggleMute}
+              onEditMember={(m) => setEditingMember(m)}
+              onRetrySpeaker={(name) => startStream("rounds", { rounds: 1 })}
+              onOpenKeys={() => setIsKeysOpen(true)}
+              onNewDebate={() => setIsNewDebateOpen(true)}
+            />
+            <Composer
+              isStreaming={isStreaming}
+              onSendMessage={handleSendMessage}
+              onRunRound={(rounds) => startStream("rounds", { rounds })}
+              onRunSummary={() => startStream("summary", {})}
+              onRunModerator={() => startStream("moderator", {})}
+              onStop={abortStream}
+              onSave={handleSaveSession}
+              hasChair={hasChair}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Bottom Cost and Token Footer */}
+      {/* Redesigned Cost Footer */}
       <CostFooter
         inputTokens={totals.inputTokens}
         outputTokens={totals.outputTokens}
@@ -276,7 +376,7 @@ export function App() {
         activeSpeaker={activeSpeaker}
       />
 
-      {/* Modals & Drawers */}
+      {/* Modals & Slide-over Sheets */}
       <NewDebateModal
         isOpen={isNewDebateOpen}
         onClose={() => setIsNewDebateOpen(false)}
@@ -293,7 +393,9 @@ export function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onConfigSaved={() => {
-          // reload current config
+          fetchConfig().then((cfg) => {
+            // refresh
+          }).catch(console.error);
         }}
       />
 

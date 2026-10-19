@@ -14,37 +14,33 @@ const PROVIDER_METADATA = [
     id: "anthropic",
     name: "Anthropic",
     env: "ANTHROPIC_API_KEY",
-    placeholder: "sk-ant-api03-...",
+    placeholder: "sk-ant-api03-…",
     docUrl: "https://console.anthropic.com/settings/keys",
-    color: "text-amber-400",
-    badgeBg: "bg-amber-950/70 border-amber-800 text-amber-300",
+    toneColor: "var(--member-skeptic)",
   },
   {
     id: "openai",
     name: "OpenAI",
     env: "OPENAI_API_KEY",
-    placeholder: "sk-proj-...",
+    placeholder: "sk-proj-…",
     docUrl: "https://platform.openai.com/api-keys",
-    color: "text-emerald-400",
-    badgeBg: "bg-emerald-950/70 border-emerald-800 text-emerald-300",
+    toneColor: "var(--member-builder)",
   },
   {
     id: "gemini",
     name: "Google Gemini",
     env: "GEMINI_API_KEY",
-    placeholder: "AIzaSy...",
+    placeholder: "AIzaSy…",
     docUrl: "https://aistudio.google.com/app/apikey",
-    color: "text-sky-400",
-    badgeBg: "bg-sky-950/70 border-sky-800 text-sky-300",
+    toneColor: "var(--member-visionary)",
   },
   {
     id: "openrouter",
     name: "OpenRouter",
     env: "OPENROUTER_API_KEY",
-    placeholder: "sk-or-v1-...",
+    placeholder: "sk-or-v1-…",
     docUrl: "https://openrouter.ai/keys",
-    color: "text-purple-400",
-    badgeBg: "bg-purple-950/70 border-purple-800 text-purple-300",
+    toneColor: "var(--member-chair)",
   },
 ];
 
@@ -92,7 +88,6 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
     setSaving(true);
     setStatusMessage(null);
     try {
-      // Send only providers that have non-empty input
       const payload: Record<string, string> = {};
       for (const [provider, val] of Object.entries(inputValues)) {
         if (val.trim()) {
@@ -109,7 +104,7 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
       const res = await saveApiKeys(payload);
       setKeysState(res.keys);
       setInputValues({});
-      setStatusMessage("API keys saved and loaded into Council environment.");
+      setStatusMessage("API keys saved successfully to ~/.config/council/keys.json.");
       if (onKeysUpdated) onKeysUpdated();
       setTimeout(() => setStatusMessage(null), 3000);
     } catch (err: any) {
@@ -120,7 +115,6 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
   };
 
   const handleTestKey = async (provider: string) => {
-    // If user typed a new key without saving, save it first
     if (inputValues[provider]?.trim()) {
       await saveApiKeys({ [provider]: inputValues[provider].trim() });
       await loadKeys();
@@ -153,39 +147,41 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col shadow-2xl overflow-hidden max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in select-none">
+      <div className="w-full max-w-xl bg-[var(--council-surface-1)] border border-[var(--council-border-strong)] rounded-xl flex flex-col shadow-2xl overflow-hidden max-h-[92vh] transition-colors">
         {/* Header */}
-        <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950/40">
+        <div className="p-4 border-b border-[var(--council-border)] flex items-center justify-between bg-[var(--council-surface-2)]">
           <div className="flex items-center space-x-2.5">
-            <div className="p-1.5 rounded-lg bg-indigo-950/60 border border-indigo-800 text-indigo-400">
+            <div className="p-1.5 rounded-md bg-[var(--council-surface-3)] border border-[var(--council-border)] text-[var(--council-accent)]">
               <Key className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-white">Provider API Keys</h3>
-              <p className="text-[11px] text-zinc-400">
-                Configure your API keys for Council debaters.
+              <h3 className="font-semibold text-sm text-[var(--council-text)]">
+                Provider API keys
+              </h3>
+              <p className="text-[11px] text-[var(--council-text-muted)]">
+                Configure access for each LLM provider.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+            className="p-1 rounded-md text-[var(--council-text-muted)] hover:text-[var(--council-text)] hover:bg-[var(--council-surface-3)] transition"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Security Notice */}
-        <div className="px-4 py-2.5 bg-zinc-950 border-b border-zinc-800 flex items-center space-x-2 text-[11px] text-zinc-400">
-          <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+        {/* Security / Privacy notice */}
+        <div className="px-4 py-2.5 bg-[var(--council-surface-2)] border-b border-[var(--council-border)] flex items-center space-x-2 text-[11px] text-[var(--council-text-muted)]">
+          <Lock className="w-3.5 h-3.5 text-[var(--council-accent)] shrink-0" />
           <span>
-            Keys are saved locally in <code className="text-zinc-300 font-mono">~/.config/council/keys.json</code> (permissions 0600) and never transmitted to any third party.
+            Keys are held locally in <code className="text-[var(--council-text)] font-mono">~/.config/council/keys.json</code> (permissions 0600) and never shared.
           </span>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs">
           {PROVIDER_METADATA.map((prov) => {
             const current = keysState[prov.id];
             const isConfigured = current?.is_set;
@@ -196,26 +192,30 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
             return (
               <div
                 key={prov.id}
-                className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800/90 space-y-2 hover:border-zinc-700/80 transition"
+                style={{
+                  borderLeftColor: prov.toneColor,
+                  borderLeftWidth: "2px",
+                }}
+                className="p-3.5 rounded-lg bg-[var(--council-surface-2)] border border-[var(--council-border)] space-y-2 hover:border-[var(--council-border-strong)] transition"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className={`font-semibold ${prov.color} text-sm`}>
+                    <span className="font-semibold text-xs text-[var(--council-text)]">
                       {prov.name}
                     </span>
-                    <span className="font-mono text-[10px] text-zinc-500">
-                      ({prov.env})
+                    <span className="font-mono text-[10px] text-[var(--council-text-faint)]">
+                      {prov.env}
                     </span>
                   </div>
 
                   <div className="flex items-center space-x-2">
                     {isConfigured ? (
-                      <span className="inline-flex items-center space-x-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-800 text-emerald-300 font-medium">
+                      <span className="inline-flex items-center space-x-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--council-success-bg)] text-[var(--council-accent)] font-mono font-medium">
                         <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />
                         <span>Configured: {preview}</span>
                       </span>
                     ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-500 font-medium">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--council-surface-3)] text-[var(--council-text-faint)] font-mono">
                         Not set
                       </span>
                     )}
@@ -224,10 +224,9 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                       href={prov.docUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[10px] text-indigo-400 hover:text-indigo-300 underline"
-                      title="Get API key from provider console"
+                      className="text-[10px] text-[var(--council-accent)] hover:underline"
                     >
-                      Get Key
+                      Get key
                     </a>
                   </div>
                 </div>
@@ -239,13 +238,13 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                       type={showKey[prov.id] ? "text" : "password"}
                       value={inputValues[prov.id] || ""}
                       onChange={(e) => handleInputChange(prov.id, e.target.value)}
-                      placeholder={isConfigured ? "Paste new key to replace..." : prov.placeholder}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-3 pr-9 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 font-mono"
+                      placeholder={isConfigured ? "Paste new key to replace…" : prov.placeholder}
+                      className="w-full bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded-md pl-3 pr-9 py-1.5 text-xs text-[var(--council-text)] placeholder-[var(--council-text-faint)] focus:outline-none focus:border-[var(--council-accent)] font-mono"
                     />
                     <button
                       type="button"
                       onClick={() => toggleShow(prov.id)}
-                      className="absolute right-2.5 top-2 text-zinc-500 hover:text-zinc-300"
+                      className="absolute right-2.5 top-2 text-[var(--council-text-faint)] hover:text-[var(--council-text)]"
                     >
                       {showKey[prov.id] ? (
                         <EyeOff className="w-3.5 h-3.5" />
@@ -259,24 +258,24 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
                     type="button"
                     onClick={() => handleTestKey(prov.id)}
                     disabled={!isConfigured && !inputValues[prov.id]}
-                    className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 text-zinc-300 text-xs font-medium transition shrink-0"
+                    className="flex items-center space-x-1 px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-1)] hover:bg-[var(--council-surface-hover)] disabled:opacity-40 text-[var(--council-text)] text-xs font-medium transition shrink-0"
                     title="Run quick 1-word test call"
                   >
-                    <RefreshCw className={`w-3 h-3 ${isTesting ? "animate-spin text-indigo-400" : ""}`} />
-                    <span>Test</span>
+                    <RefreshCw className={`w-3 h-3 ${isTesting ? "animate-spin text-[var(--council-accent)]" : ""}`} />
+                    <span>{isTesting ? "Testing" : "Test"}</span>
                   </button>
                 </div>
 
                 {/* Test feedback */}
                 {testResult && !isTesting && (
-                  <div className="pt-1">
+                  <div className="pt-0.5">
                     {testResult.ok ? (
-                      <span className="text-[11px] text-emerald-400 flex items-center space-x-1 font-medium">
+                      <span className="text-[11px] text-[var(--council-accent)] flex items-center space-x-1 font-medium font-mono">
                         <CheckCircle2 className="w-3 h-3" />
-                        <span>API key verified successfully. Model responded!</span>
+                        <span>Provider authentication verified.</span>
                       </span>
                     ) : (
-                      <span className="text-[11px] text-red-400 flex items-start space-x-1 font-mono">
+                      <span className="text-[11px] text-[var(--council-danger)] flex items-start space-x-1 font-mono">
                         <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
                         <span className="break-all">{testResult.error}</span>
                       </span>
@@ -289,10 +288,10 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-zinc-800 flex items-center justify-between bg-zinc-950/60">
+        <div className="p-4 border-t border-[var(--council-border)] flex items-center justify-between bg-[var(--council-surface-2)]">
           <div>
             {statusMessage && (
-              <span className={`text-xs ${statusMessage.startsWith("Error") ? "text-red-400" : "text-emerald-400"}`}>
+              <span className={`text-xs ${statusMessage.startsWith("Error") ? "text-[var(--council-danger)]" : "text-[var(--council-accent)]"}`}>
                 {statusMessage}
               </span>
             )}
@@ -300,17 +299,17 @@ export const ApiKeysModal: React.FC<ApiKeysModalProps> = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition"
+              className="px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-1)] hover:bg-[var(--council-surface-hover)] text-[var(--council-text-muted)] hover:text-[var(--council-text)] text-xs font-medium transition"
             >
               Close
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center space-x-1.5 px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold transition shadow-sm"
+              className="flex items-center space-x-1.5 px-4 py-1.5 rounded-md bg-[var(--council-accent)] hover:opacity-90 disabled:opacity-50 text-[var(--bg-canvas)] text-xs font-semibold transition shadow-sm"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>{saving ? "Saving..." : "Save Keys"}</span>
+              <span>{saving ? "Saving…" : "Save keys"}</span>
             </button>
           </div>
         </div>

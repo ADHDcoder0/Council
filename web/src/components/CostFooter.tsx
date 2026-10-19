@@ -1,5 +1,5 @@
 import React from "react";
-import { Coins, Cpu, CheckCircle2, HelpCircle } from "lucide-react";
+import { Cpu, Terminal } from "lucide-react";
 
 interface CostFooterProps {
   inputTokens: number;
@@ -19,51 +19,57 @@ export const CostFooter: React.FC<CostFooterProps> = ({
   activeSpeaker,
 }) => {
   return (
-    <footer className="h-9 border-t border-zinc-800/80 bg-zinc-950 px-4 flex items-center justify-between text-xs text-zinc-400 select-none">
-      <div className="flex items-center space-x-4">
-        {/* Token metrics */}
-        <div className="flex items-center space-x-1.5 font-mono">
-          <Cpu className="w-3.5 h-3.5 text-zinc-500" />
+    <footer className="h-8 border-t border-[var(--council-border)] bg-[var(--council-surface-1)] px-4 flex items-center justify-between text-xs text-[var(--council-text-muted)] select-none shrink-0 transition-colors">
+      <div className="flex items-center space-x-3 text-[11px] font-mono">
+        {/* Token counts */}
+        <div className="flex items-center space-x-1.5">
+          <Cpu className="w-3 h-3 text-[var(--council-text-faint)]" />
           <span>
             {isCostEstimated ? "~" : ""}
-            {inputTokens.toLocaleString()} in / {isCostEstimated ? "~" : ""}
+            {inputTokens.toLocaleString()} in
+          </span>
+          <span className="text-[var(--council-text-faint)]">/</span>
+          <span>
+            {isCostEstimated ? "~" : ""}
             {outputTokens.toLocaleString()} out
           </span>
         </div>
 
-        {/* Cost */}
-        <div className="flex items-center space-x-1.5 font-mono">
-          <Coins className="w-3.5 h-3.5 text-amber-500" />
-          <span className="text-zinc-200 font-medium">
+        <span className="text-[var(--council-border-strong)]">|</span>
+
+        {/* Cost & Accuracy Badge */}
+        <div className="flex items-center space-x-1.5">
+          <span className="font-semibold text-[var(--council-text)]">
             ${totalCostUsd.toFixed(4)}
           </span>
           <span
-            className={`text-[10px] px-1.5 py-0.2 rounded font-sans uppercase font-semibold ${
+            className={`text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-medium ${
               isCostEstimated
-                ? "bg-amber-950/70 text-amber-400 border border-amber-800/60"
-                : "bg-emerald-950/70 text-emerald-400 border border-emerald-800/60"
+                ? "bg-amber-950/40 text-amber-400 border border-amber-800/40"
+                : "bg-[var(--council-success-bg)] text-[var(--council-accent)] border border-[var(--council-accent)]/30"
             }`}
             title={
               isCostEstimated
-                ? "Token counts estimated (~1.3 tokens/word) where provider omitted usage"
-                : "Exact token counts returned by provider API"
+                ? "Usage estimated (~1.3 tok/word fallback)"
+                : "Exact tokens reported by provider API"
             }
           >
-            {isCostEstimated ? "est." : "exact"}
+            {isCostEstimated ? "Estimated" : "Exact"}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 text-[11px]">
         {isStreaming ? (
-          <div className="flex items-center space-x-1.5 text-indigo-400 font-medium">
-            <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
-            <span>{activeSpeaker ? `${activeSpeaker} speaking...` : "Council deliberating..."}</span>
+          <div className="flex items-center space-x-1.5 text-[var(--council-accent)] font-mono">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--council-accent)] animate-ping" />
+            <span>{activeSpeaker ? `${activeSpeaker} speaking…` : "Deliberating…"}</span>
           </div>
         ) : (
-          <span className="text-zinc-500 text-[11px] hidden sm:inline">
-            Local debate environment · 127.0.0.1
-          </span>
+          <div className="flex items-center space-x-1 text-[var(--council-text-faint)] font-mono text-[10px]">
+            <Terminal className="w-3 h-3" />
+            <span>Local · 127.0.0.1</span>
+          </div>
         )}
       </div>
     </footer>

@@ -1,3 +1,7 @@
+export type MemberTone = "skeptic" | "builder" | "visionary" | "chair" | "user";
+
+export type Direction = "thread" | "workbench" | "arena";
+
 export interface MemberInfo {
   name: string;
   provider: string;
@@ -5,6 +9,7 @@ export interface MemberInfo {
   role: string;
   is_chair: boolean;
   is_muted: boolean;
+  tone?: MemberTone;
 }
 
 export interface TranscriptEntry {
@@ -18,6 +23,9 @@ export interface TranscriptEntry {
   is_error?: boolean;
   input_tokens?: number;
   output_tokens?: number;
+  provider?: string;
+  model?: string;
+  tone?: MemberTone;
 }
 
 export interface SessionResponse {
@@ -67,3 +75,13 @@ export interface ApiKeyInfo {
 }
 
 export type ApiKeysState = Record<string, ApiKeyInfo>;
+
+export function getMemberTone(name: string, isChair = false): MemberTone {
+  if (isChair || name.toLowerCase().includes("chair")) return "chair";
+  const lower = name.toLowerCase();
+  if (lower.includes("skeptic")) return "skeptic";
+  if (lower.includes("builder")) return "builder";
+  if (lower.includes("visionary")) return "visionary";
+  if (lower === "you" || lower === "user") return "user";
+  return "builder";
+}

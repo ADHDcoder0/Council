@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Search, FileText, ArrowRight, RefreshCw } from "lucide-react";
+import { X, Search, FileText, ArrowRight, RefreshCw, BookOpen } from "lucide-react";
 import { SavedSessionItem } from "../types";
 import { fetchHistory } from "../api";
 
@@ -45,25 +45,32 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md bg-zinc-900 border-l border-zinc-800 h-full flex flex-col shadow-2xl">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-sm animate-fade-in select-none">
+      <div className="w-full max-w-md bg-[var(--council-surface-1)] border-l border-[var(--council-border-strong)] h-full flex flex-col shadow-2xl transition-colors">
         {/* Header */}
-        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+        <div className="p-4 border-b border-[var(--council-border)] flex items-center justify-between bg-[var(--council-surface-2)]">
           <div className="flex items-center space-x-2">
-            <FileText className="w-4 h-4 text-indigo-400" />
-            <h3 className="font-semibold text-sm text-white">Saved Sessions</h3>
+            <BookOpen className="w-4 h-4 text-[var(--council-accent)]" />
+            <div>
+              <h3 className="font-semibold text-sm text-[var(--council-text)]">
+                Debate history
+              </h3>
+              <p className="text-[10px] text-[var(--council-text-muted)]">
+                {sessions.length} sessions stored in ~/council-sessions/
+              </p>
+            </div>
           </div>
           <div className="flex items-center space-x-1">
             <button
               onClick={loadSessions}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+              className="p-1 rounded-md text-[var(--council-text-muted)] hover:text-[var(--council-text)] hover:bg-[var(--council-surface-3)] transition"
               title="Refresh list"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+              className="p-1 rounded-md text-[var(--council-text-muted)] hover:text-[var(--council-text)] hover:bg-[var(--council-surface-3)] transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -71,15 +78,15 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         </div>
 
         {/* Search */}
-        <div className="p-3 border-b border-zinc-800/80 bg-zinc-950/40">
+        <div className="p-3 border-b border-[var(--council-border)] bg-[var(--council-surface-2)]">
           <div className="relative flex items-center">
-            <Search className="w-4 h-4 text-zinc-500 absolute left-3" />
+            <Search className="w-3.5 h-3.5 text-[var(--council-text-faint)] absolute left-3" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search saved debates..."
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+              placeholder="Search topics…"
+              className="w-full bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded-md pl-9 pr-3 py-1.5 text-xs text-[var(--council-text)] placeholder-[var(--council-text-faint)] focus:outline-none focus:border-[var(--council-accent)]"
             />
           </div>
         </div>
@@ -87,43 +94,48 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         {/* List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {loading ? (
-            <div className="p-8 text-center text-xs text-zinc-500">
-              Loading session files...
+            <div className="p-8 text-center text-xs text-[var(--council-text-muted)] font-mono">
+              Loading session files…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="p-8 text-center text-xs text-zinc-500">
+            <div className="p-8 text-center text-xs text-[var(--council-text-muted)]">
               {search ? "No matching sessions found." : "No saved debates in ~/council-sessions/ yet."}
             </div>
           ) : (
-            filtered.map((item) => (
+            filtered.map((item, idx) => (
               <div
                 key={item.filepath}
-                className="p-3 rounded-lg border border-zinc-800 bg-zinc-950/60 hover:border-zinc-700 transition flex flex-col justify-between space-y-2"
+                className="p-3 rounded-lg border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:border-[var(--council-border-strong)] transition flex flex-col justify-between space-y-2"
               >
-                <div>
-                  <div className="text-sm font-medium text-zinc-200 line-clamp-2">
-                    {item.topic}
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-[var(--council-surface-3)] border border-[var(--council-border)] flex items-center justify-center font-mono text-[10px] text-[var(--council-text-muted)] shrink-0">
+                    {String(idx + 1).padStart(2, "0")}
                   </div>
-                  <div className="flex items-center space-x-2 text-[11px] text-zinc-500 mt-1 font-mono">
-                    <span>{item.date}</span>
-                    <span>·</span>
-                    <span>{item.message_count} messages</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-[var(--council-text)] line-clamp-2 leading-snug">
+                      {item.topic}
+                    </div>
+                    <div className="flex items-center space-x-2 text-[10px] text-[var(--council-text-faint)] mt-1 font-mono">
+                      <span>{item.date}</span>
+                      <span>·</span>
+                      <span>{item.message_count} entries</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 border-t border-zinc-800/60">
-                  <span className="text-[10px] text-zinc-500 font-mono truncate max-w-[200px]">
+                <div className="flex items-center justify-between pt-1 border-t border-[var(--council-border)] text-xs">
+                  <code className="text-[10px] text-[var(--council-text-faint)] font-mono truncate max-w-[180px]">
                     {item.filename}
-                  </span>
+                  </code>
                   <button
                     onClick={() => {
                       onResumeSession(item.filepath);
                       onClose();
                     }}
-                    className="flex items-center space-x-1 px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition"
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded bg-[var(--council-surface-1)] hover:bg-[var(--council-surface-hover)] border border-[var(--council-border)] text-[var(--council-text)] text-xs font-medium transition"
                   >
-                    <span>Resume</span>
-                    <ArrowRight className="w-3 h-3" />
+                    <span>Reopen</span>
+                    <ArrowRight className="w-3 h-3 text-[var(--council-accent)]" />
                   </button>
                 </div>
               </div>
