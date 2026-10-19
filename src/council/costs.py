@@ -21,6 +21,39 @@ PRICE_TABLE: dict[str, tuple[float, float]] = {
     "default": (1.50, 6.00),
 }
 
+from pathlib import Path
+import tomllib
+import tomli_w
+
+PRICES_PATH = Path.home() / ".config" / "council" / "prices.toml"
+
+
+def load_price_table() -> dict[str, tuple[float, float]]:
+    """Return pricing table, merged with ~/.config/council/prices.toml if present."""
+    table = dict(PRICE_TABLE)
+    if PRICES_PATH.exists():
+        try:
+            with open(PRICES_PATH, "rb") as f:
+                data = tomllib.load(f)
+            prices = data.get("prices", {})
+            for model, p in prices.items():
+                if isinstance(p, (list, tuple)) and len(p) == 2:
+                    table[model] = (float(p[0]), float(p[1]))
+        except Exception:
+            pass
+    return table
+
+
+def save_price_table(table: dict[str, tuple[float, float]]) -> None:
+    """Save custom pricing table to ~/.config/council/prices.toml."""
+    PRICES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "prices": {k: [v[0], v[1]] for k, v in table.items()}
+    }
+    with open(PRICES_PATH, "wb") as f:
+        tomli_w.dump(data, f)
+
+
 # Standard approximation: ~1.3 tokens per word
 TOKENS_PER_WORD = 1.3
 
@@ -58,14 +91,15 @@ class CostTracker:
         self.total_output_tokens += out_tokens
 
         # Lookup pricing (or match model prefix/substring)
-        pricing = PRICE_TABLE.get(model)
+        price_table = load_price_table()
+        pricing = price_table.get(model)
         if not pricing:
-            for key, p in PRICE_TABLE.items():
+            for key, p in price_table.items():
                 if key in model or model in key:
                     pricing = p
                     break
         if not pricing:
-            pricing = PRICE_TABLE["default"]
+            pricing = price_table["default"]
 
         cost = (in_tokens * pricing[0] + out_tokens * pricing[1]) / 1_000_000.0
         self.total_cost_usd += cost

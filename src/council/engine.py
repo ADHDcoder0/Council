@@ -78,6 +78,7 @@ class Engine:
         on_start=None,
         on_result=None,
         on_error=None,
+        on_token=None,
     ) -> None:
         """Run one round: each active member speaks in config order."""
         for member in self.active_members():
@@ -86,7 +87,8 @@ class Engine:
             system = self.build_system_prompt(member)
             user = self.build_user_prompt(member)
             try:
-                res = providers.complete(member, system, user, self.config.words)
+                token_cb = (lambda tok: on_token(member, tok)) if on_token else None
+                res = providers.complete(member, system, user, self.config.words, on_token=token_cb)
                 self.record_cost(member, system, user, res)
                 text = str(res)
                 self.transcript.append(
@@ -103,6 +105,7 @@ class Engine:
         on_start=None,
         on_result=None,
         on_error=None,
+        on_token=None,
     ) -> None:
         """Ask the chair for a summary."""
         chair = self.chair()
@@ -113,7 +116,8 @@ class Engine:
         system = self.build_system_prompt(chair)
         user = self.build_user_prompt(chair)
         try:
-            res = providers.complete(chair, system, user, self.config.words)
+            token_cb = (lambda tok: on_token(chair, tok)) if on_token else None
+            res = providers.complete(chair, system, user, self.config.words, on_token=token_cb)
             self.record_cost(chair, system, user, res)
             text = str(res)
             self.transcript.append(

@@ -291,6 +291,20 @@ def members_remove(
     render.console.print(f"[green]Removed {name} from council.[/green]")
 
 
+@app.command()
+def web(
+    port: int = typer.Option(8000, "--port", "-p", help="Port to bind local web UI to"),
+    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host interface to bind to"),
+    reload: bool = typer.Option(False, "--reload", help="Enable auto-reload for development"),
+) -> None:
+    """Launch the local Council web UI."""
+    import uvicorn
+
+    render.console.print(f"[bold green]Starting Council Web UI at http://{host}:{port}[/bold green]")
+    render.console.print("[dim]Press Ctrl+C to stop.[/dim]")
+    uvicorn.run("council.web.app:app", host=host, port=port, reload=reload)
+
+
 # ── Entry point ───────────────────────────────────────────────────────────
 
 
