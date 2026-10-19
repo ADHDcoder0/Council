@@ -1,0 +1,103 @@
+"""Debate engine — transcript management and round-robin execution."""
+
+from __future__ import annotations
+
+from council.models import CouncilConfig, Member, TranscriptEntry
+from council.providers import ProviderError, complete
+
+
+class Engine:
+    """Owns the transcript and drives round-robin debate turns."""
+
+    def __init__(self, config: CouncilConfig) -> None:
+        self.config = config
+        self.transcript: list[TranscriptEntry] = []
+
+    # ── Transcript helpers ────────────────────────────────────────────────
+
+    def add_user_message(self, text: str) -> None:
+        self.transcript.append(TranscriptEntry(speaker="You", kind="user", text=text))
+
+    # ── Member queries ────────────────────────────────────────────────────
+
+    def active_members(self) -> list[Member]:
+        """Non-chair, non-muted members in config order."""
+        return [m for m in self.config.members if not m.chair and not m.muted]
+
+    def chair(self) -> Member | None:
+        """Return the chair member, if any."""
+        return next((m for m in self.config.members if m.chair), None)
+
+    # ── Prompt construction ───────────────────────────────────────────────
+
+    def build_system_prompt(self, member: Member) -> str:
+        other_names = [m.name for m in self.config.members if m.name != member.name]
+        return (
+            f"You are {member.name}. {member.role}\n\n"
+            f"Other council members: {', '.join(other_names)}.\n"
+            f"Rules: {self.config.rules}\n"
+            f"Keep your response under {self.config.words} words."
+        )
+
+    def build_user_prompt(self, member: Member) -> str:
+        window = self.transcript[-self.config.window :]
+        lines = [f"[{entry.speaker}]: {entry.text}" for entry in window]
+        lines.append(f"\nIt is your turn, {member.name}.")
+        return "\n".join(lines)
+
+    # ── Round execution ───────────────────────────────────────────────────
+
+    def run_round(
+        self,
+        on_start=None,
+        on_result=None,
+        on_error=None,
+    ) -> None:
+        """
+        Run one round: each active member speaks in config order.
+
+        Callbacks:
+            on_start(member)        — called before each provider call
+            on_result(member, text) — called after a successful call
+            on_error(member, error) — called on failure; round continues
+        """
+        for member in self.active_members():
+            if on_start:
+                on_start(member)
+            system = self.build_system_prompt(member)
+            user = self.build_user_prompt(member)
+            try:
+                text = complete(member, system, user, self.config.words)
+                self.transcript.append(
+                    TranscriptEntry(speaker=member.name, kind="member", text=text)
+                )
+                if on_result:
+                    on_result(member, text)
+            except ProviderError as exc:
+                if on_error:
+                    on_error(member, exc)
+
+    def run_chair(
+        self,
+        on_start=None,
+        on_result=None,
+        on_error=None,
+    ) -> None:
+        """Ask the chair for a summary.  No-op if no chair is configured."""
+        chair = self.chair()
+        if chair is None:
+            return
+        if on_start:
+            on_start(chair)
+        system = self.build_system_prompt(chair)
+        user = self.build_user_prompt(chair)
+        try:
+            text = complete(chair, system, user, self.config.words)
+            self.transcript.append(
+                TranscriptEntry(speaker=chair.name, kind="chair", text=text)
+            )
+            if on_result:
+                on_result(chair, text)
+        except ProviderError as exc:
+            if on_error:
+                on_error(chair, exc)
