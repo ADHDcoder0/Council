@@ -31,12 +31,61 @@ class ProviderError(Exception):
     """Raised when a provider call fails after retries."""
 
 
+from pathlib import Path
+
+KEYS_PATH = Path.home() / ".config" / "council" / "keys.json"
+
+
+def load_stored_keys() -> dict[str, str]:
+    """Load API keys saved in ~/.config/council/keys.json."""
+    if not KEYS_PATH.exists():
+        return {}
+    try:
+        data = json.loads(KEYS_PATH.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return {k: str(v).strip() for k, v in data.items() if str(v).strip()}
+    except Exception:
+        pass
+    return {}
+
+
+def save_api_keys(keys: dict[str, str]) -> None:
+    """Save API keys to ~/.config/council/keys.json with 0600 permissions, and update os.environ."""
+    KEYS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    existing = load_stored_keys()
+    for provider, key in keys.items():
+        p_lower = provider.lower()
+        if p_lower in PROVIDER_KEY_ENV:
+            cleaned = key.strip()
+            if cleaned:
+                existing[p_lower] = cleaned
+                os.environ[PROVIDER_KEY_ENV[p_lower]] = cleaned
+            elif p_lower in existing:
+                del existing[p_lower]
+                os.environ.pop(PROVIDER_KEY_ENV[p_lower], None)
+
+    KEYS_PATH.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    try:
+        os.chmod(KEYS_PATH, 0o600)
+    except Exception:
+        pass
+
+
 def get_api_key(provider: str) -> str | None:
     """Return the API key for a provider, or None if not set."""
-    env_var = PROVIDER_KEY_ENV.get(provider)
+    p_lower = provider.lower()
+    env_var = PROVIDER_KEY_ENV.get(p_lower)
     if env_var is None:
         return None
-    return os.environ.get(env_var) or None
+    val = os.environ.get(env_var)
+    if val:
+        return val
+    stored = load_stored_keys()
+    key = stored.get(p_lower)
+    if key:
+        os.environ[env_var] = key
+        return key
+    return None
 
 
 def complete(

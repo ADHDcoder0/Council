@@ -414,3 +414,40 @@ def test_spa_static_serving():
     res = client.get("/")
     assert res.status_code == 200
     assert "Council" in res.text
+
+
+def test_keys_endpoints(tmp_path, monkeypatch):
+    test_keys_file = tmp_path / "keys.json"
+    monkeypatch.setattr("council.providers.KEYS_PATH", test_keys_file)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    # 1. Get keys when none set
+    res = client.get("/api/keys")
+    assert res.status_code == 200
+    keys = res.json()
+    assert "anthropic" in keys
+    assert keys["anthropic"]["is_set"] is False
+
+    # 2. Save keys
+    payload = {
+        "anthropic": "sk-ant-1234567890abcdef",
+        "openai": "sk-proj-9876543210fedcba",
+    }
+    save_res = client.post("/api/keys", json=payload)
+    assert save_res.status_code == 200
+    assert save_res.json()["status"] == "saved"
+    updated_keys = save_res.json()["keys"]
+    assert updated_keys["anthropic"]["is_set"] is True
+    assert "sk-ant-" in updated_keys["anthropic"]["preview"]
+    assert updated_keys["openai"]["is_set"] is True
+
+    # 3. Test key
+    with patch("council.providers.complete", return_value=CompleteResult(text="Pong")):
+        test_res = client.post("/api/keys/test/anthropic")
+        assert test_res.status_code == 200
+        assert test_res.json()["status"] == "ok"
+
+    # 4. Unknown provider returns 400
+    err_res = client.post("/api/keys/test/invalid_provider")
+    assert err_res.status_code == 400

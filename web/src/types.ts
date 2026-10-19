@@ -58,3 +58,12 @@ export interface CouncilConfig {
     muted?: boolean;
   }>;
 }
+
+export interface ApiKeyInfo {
+  provider: string;
+  env_var: string;
+  is_set: boolean;
+  preview: string;
+}
+
+export type ApiKeysState = Record<string, ApiKeyInfo>;

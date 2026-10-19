@@ -3,6 +3,7 @@ import {
   MemberInfo,
   SavedSessionItem,
   SessionResponse,
+  ApiKeysState,
 } from "./types";
 
 const BASE_URL = "";
@@ -119,5 +120,33 @@ export async function resumeSessionFromFile(
     body: JSON.stringify({ filepath }),
   });
   if (!res.ok) throw new Error("Failed to resume session");
+  return res.json();
+}
+
+export async function fetchApiKeys(): Promise<ApiKeysState> {
+  const res = await fetch(`${BASE_URL}/api/keys`);
+  if (!res.ok) throw new Error("Failed to fetch API keys");
+  return res.json();
+}
+
+export async function saveApiKeys(
+  keys: Record<string, string>
+): Promise<{ status: string; keys: ApiKeysState }> {
+  const res = await fetch(`${BASE_URL}/api/keys`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(keys),
+  });
+  if (!res.ok) throw new Error("Failed to save API keys");
+  return res.json();
+}
+
+export async function testApiKey(
+  provider: string
+): Promise<{ status: string; error?: string }> {
+  const res = await fetch(`${BASE_URL}/api/keys/test/${provider}`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to test API key");
   return res.json();
 }

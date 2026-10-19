@@ -8,6 +8,7 @@ import { HistoryDrawer } from "./components/HistoryDrawer";
 import { SettingsModal } from "./components/SettingsModal";
 import { NewDebateModal } from "./components/NewDebateModal";
 import { EditMemberModal } from "./components/EditMemberModal";
+import { ApiKeysModal } from "./components/ApiKeysModal";
 import { useSSE } from "./hooks/useSSE";
 import {
   createSession,
@@ -15,8 +16,10 @@ import {
   patchMember,
   saveSessionToDisk,
   resumeSessionFromFile,
+  fetchApiKeys,
 } from "./api";
 import { MemberInfo, SessionResponse, TranscriptEntry } from "./types";
+import { Key } from "lucide-react";
 
 export function App() {
   const [session, setSession] = useState<SessionResponse | null>(null);
@@ -32,8 +35,24 @@ export function App() {
   const [isNewDebateOpen, setIsNewDebateOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isKeysOpen, setIsKeysOpen] = useState(false);
+  const [hasAnyKey, setHasAnyKey] = useState(true);
   const [editingMember, setEditingMember] = useState<MemberInfo | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const checkKeys = useCallback(async () => {
+    try {
+      const keys = await fetchApiKeys();
+      const anySet = Object.values(keys).some((k) => k.is_set);
+      setHasAnyKey(anySet);
+    } catch (e) {
+      console.error("Failed to check keys:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkKeys();
+  }, [checkKeys]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -198,6 +217,7 @@ export function App() {
         onNewDebate={() => setIsNewDebateOpen(true)}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenKeys={() => setIsKeysOpen(true)}
         onExport={handleExport}
       />
 
@@ -213,6 +233,21 @@ export function App() {
 
         {/* Center: Transcript + Composer */}
         <main className="flex-1 flex flex-col min-w-0 bg-zinc-950">
+          {!hasAnyKey && (
+            <div className="mx-4 mt-3 p-3 rounded-lg bg-amber-950/40 border border-amber-800/80 flex items-center justify-between text-xs text-amber-200 shrink-0">
+              <div className="flex items-center space-x-2">
+                <Key className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>No API keys configured yet. Enter your Anthropic, OpenAI, Gemini, or OpenRouter keys to start debating.</span>
+              </div>
+              <button
+                onClick={() => setIsKeysOpen(true)}
+                className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs transition shrink-0 ml-3 shadow-sm"
+              >
+                Enter Keys
+              </button>
+            </div>
+          )}
+
           <TranscriptView
             transcript={transcript}
             topic={session?.topic || ""}
@@ -267,6 +302,12 @@ export function App() {
         isOpen={!!editingMember}
         onClose={() => setEditingMember(null)}
         onSave={handleSaveMemberEdit}
+      />
+
+      <ApiKeysModal
+        isOpen={isKeysOpen}
+        onClose={() => setIsKeysOpen(false)}
+        onKeysUpdated={checkKeys}
       />
     </div>
   );

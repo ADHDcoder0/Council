@@ -99,6 +99,57 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@router.get("/keys")
+def get_api_keys() -> dict[str, dict]:
+    result = {}
+    for p, env_var in providers.PROVIDER_KEY_ENV.items():
+        key = providers.get_api_key(p)
+        is_set = bool(key)
+        preview = ""
+        if key:
+            preview = f"{key[:7]}...{key[-4:]}" if len(key) >= 12 else "****"
+        result[p] = {
+            "provider": p,
+            "env_var": env_var,
+            "is_set": is_set,
+            "preview": preview,
+        }
+    return result
+
+
+@router.post("/keys")
+def set_api_keys(payload: dict[str, str]) -> dict:
+    providers.save_api_keys(payload)
+    return {
+        "status": "saved",
+        "keys": get_api_keys(),
+    }
+
+
+@router.post("/keys/test/{provider}")
+def test_provider_key(provider: str) -> dict:
+    p_lower = provider.lower()
+    if p_lower not in providers.PROVIDER_KEY_ENV:
+        raise HTTPException(status_code=400, detail=f"Unknown provider '{provider}'")
+    key = providers.get_api_key(p_lower)
+    if not key:
+        return {"status": "error", "error": f"No API key configured for {provider}"}
+
+    from council.config import DEFAULT_MODELS_BY_PROVIDER
+    model = DEFAULT_MODELS_BY_PROVIDER.get(p_lower, "default")
+    tester = Member(name="Tester", provider=p_lower, model=model, role="Tester")
+    try:
+        providers.complete(
+            tester,
+            system_prompt="Reply with exactly one word.",
+            user_prompt="Ping",
+            words=2,
+        )
+        return {"status": "ok", "provider": provider}
+    except Exception as exc:
+        return {"status": "error", "provider": provider, "error": str(exc)}
+
+
 @router.get("/config")
 def get_config() -> dict:
     cfg = load_config()

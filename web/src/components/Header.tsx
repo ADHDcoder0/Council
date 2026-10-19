@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, History, Settings, Download, ExternalLink } from "lucide-react";
+import { Plus, History, Settings, Download, Key } from "lucide-react";
 
 interface HeaderProps {
   topic: string;
@@ -7,6 +7,7 @@ interface HeaderProps {
   onNewDebate: () => void;
   onOpenHistory: () => void;
   onOpenSettings: () => void;
+  onOpenKeys: () => void;
   onExport: (format: "markdown" | "json") => void;
 }
 
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNewDebate,
   onOpenHistory,
   onOpenSettings,
+  onOpenKeys,
   onExport,
 }) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -60,6 +62,15 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <History className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">History</span>
+        </button>
+
+        <button
+          onClick={onOpenKeys}
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-amber-300 hover:text-amber-200 border border-amber-900/40 text-xs font-medium transition"
+          title="Enter or view provider API keys"
+        >
+          <Key className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">API Keys</span>
         </button>
 
         <button
