@@ -109,6 +109,27 @@ council members edit Pragmatist --role "Focuses on extreme simplicity"
 council members remove Pragmatist
 ```
 
+### 5. Local Web UI (`council web`)
+
+Launch the local graphical web interface running on `http://127.0.0.1:8000`:
+
+```bash
+council web
+
+# Custom port or interface
+council web --port 8080 --host 127.0.0.1
+```
+
+**Web UI Features:**
+- **Live SSE Streaming**: Watch each council member formulate their responses token-by-token.
+- **Color-Coded Speaker Cards**: Instant speaker recognition matching CLI themes (Skeptic in red, Builder in green, Visionary in cyan, Chair in gold).
+- **Interactive Sidebar**: Toggle mute status on any debater, view active speaking indicators, and edit member roles/models on the fly.
+- **Session History & Resumption**: Browse, search, and reload saved Markdown debates directly from `~/council-sessions/`.
+- **Exact Token & Cost Tracking**: Captures real provider token metrics (`input_tokens`, `output_tokens`) from SSE streams with automatic fallback to heuristics and an `exact` vs `est.` badge.
+- **Export Options**: Download active debate transcripts as formatted Markdown (`.md`) or structured JSON (`.json`).
+- **Custom Price Overrides**: Manage token pricing per model via `~/.config/council/prices.toml`.
+- **Zero Node Runtime Dependency**: Single-page React application is pre-compiled into static assets and served directly by FastAPI.
+
 ---
 
 ## ⚙️ Configuration File (`~/.config/council/config.toml`)
