@@ -47,12 +47,28 @@ class Engine:
         lines.append(f"\nIt is your turn, {member.name}.")
         return "\n".join(lines)
 
-    def record_cost(self, member: Member, system: str, user: str, output: str) -> None:
+    def record_cost(
+        self,
+        member: Member,
+        system: str,
+        user: str,
+        output: CompleteResult | str,
+    ) -> None:
         """Record input and output tokens for cost calculation."""
+        from council.models import CompleteResult
+
+        text = output.text if isinstance(output, CompleteResult) else str(output)
+        in_tokens = output.input_tokens if isinstance(output, CompleteResult) else None
+        out_tokens = output.output_tokens if isinstance(output, CompleteResult) else None
+        is_estimated = output.is_estimated if isinstance(output, CompleteResult) else True
+
         self.cost_tracker.record_turn(
             model=member.model,
             input_text=f"{system}\n{user}",
-            output_text=output,
+            output_text=text,
+            input_tokens=in_tokens,
+            output_tokens=out_tokens,
+            is_estimated=is_estimated,
         )
 
     # ── Round execution ───────────────────────────────────────────────────
@@ -70,8 +86,9 @@ class Engine:
             system = self.build_system_prompt(member)
             user = self.build_user_prompt(member)
             try:
-                text = providers.complete(member, system, user, self.config.words)
-                self.record_cost(member, system, user, text)
+                res = providers.complete(member, system, user, self.config.words)
+                self.record_cost(member, system, user, res)
+                text = str(res)
                 self.transcript.append(
                     TranscriptEntry(speaker=member.name, kind="member", text=text)
                 )
@@ -96,8 +113,9 @@ class Engine:
         system = self.build_system_prompt(chair)
         user = self.build_user_prompt(chair)
         try:
-            text = providers.complete(chair, system, user, self.config.words)
-            self.record_cost(chair, system, user, text)
+            res = providers.complete(chair, system, user, self.config.words)
+            self.record_cost(chair, system, user, res)
+            text = str(res)
             self.transcript.append(
                 TranscriptEntry(speaker=chair.name, kind="chair", text=text)
             )

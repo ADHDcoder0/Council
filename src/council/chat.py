@@ -120,7 +120,7 @@ class ChatSession:
 
                 self.engine.record_cost(member, system, user, text)
                 self.engine.transcript.append(
-                    TranscriptEntry(speaker=member.name, kind="member", text=text)
+                    TranscriptEntry(speaker=member.name, kind="member", text=str(text))
                 )
 
     def _run_chair(self) -> None:
@@ -143,7 +143,7 @@ class ChatSession:
                 )
             self.engine.record_cost(chair, system, user, text)
             self.engine.transcript.append(
-                TranscriptEntry(speaker=chair.name, kind="chair", text=text)
+                TranscriptEntry(speaker=chair.name, kind="chair", text=str(text))
             )
         except KeyboardInterrupt:
             render.console.print("\n[yellow]⚡ Cancelled by user.[/yellow]\n")

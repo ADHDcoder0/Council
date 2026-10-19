@@ -1,0 +1,3 @@
+{"candidates": [{"content": {"parts": [{"text": "Gemini "}], "role": "model"}, "finishReason": null, "index": 0}]}
+{"candidates": [{"content": {"parts": [{"text": "streaming "}], "role": "model"}, "finishReason": null, "index": 0}]}
+{"candidates": [{"content": {"parts": [{"text": "works!"}], "role": "model"}, "finishReason": "STOP", "index": 0}], "usageMetadata": {"promptTokenCount": 20, "candidatesTokenCount": 4, "totalTokenCount": 24}}

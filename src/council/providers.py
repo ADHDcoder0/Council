@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import httpx
 
+from council.models import CompleteResult
+
 if TYPE_CHECKING:
     from council.models import Member
 
@@ -43,9 +45,9 @@ def complete(
     user_prompt: str,
     words: int = 120,
     on_token: Callable[[str], None] | None = None,
-) -> str:
+) -> CompleteResult:
     """
-    Call the appropriate provider and return the response text.
+    Call the appropriate provider and return a CompleteResult.
     If on_token is provided, streams tokens as they arrive.
     Raises ProviderError on failure (bad key, unknown provider, exhausted retries).
     """
@@ -84,7 +86,7 @@ def _call_anthropic(
     user: str,
     words: int,
     on_token: Callable[[str], None] | None = None,
-) -> str:
+) -> CompleteResult:
     max_tokens = words * 2
 
     if on_token is None:
@@ -109,9 +111,20 @@ def _call_anthropic(
         text_parts = [b["text"] for b in blocks if b.get("type") == "text"]
         if not text_parts:
             raise ProviderError(f"Anthropic returned no text: {resp.text[:200]}")
-        return "".join(text_parts)
+        text = "".join(text_parts)
+        usage = data.get("usage", {})
+        return CompleteResult(
+            text=text,
+            input_tokens=usage.get("input_tokens", max(1, int(len(f"{system} {user}".split()) * 1.3))),
+            output_tokens=usage.get("output_tokens", max(1, int(len(text.split()) * 1.3))),
+            is_estimated="input_tokens" not in usage,
+        )
 
     collected: list[str] = []
+    input_tokens = 0
+    output_tokens = 0
+    got_usage = False
+
     with httpx.stream(
         "POST",
         "https://api.anthropic.com/v1/messages",
@@ -139,13 +152,33 @@ def _call_anthropic(
                     data = json.loads(payload)
                 except json.JSONDecodeError:
                     continue
-                if data.get("type") == "content_block_delta":
+                event_type = data.get("type")
+                if event_type == "message_start":
+                    input_tokens = data.get("message", {}).get("usage", {}).get("input_tokens", 0)
+                    if input_tokens > 0:
+                        got_usage = True
+                elif event_type == "content_block_delta":
                     delta = data.get("delta", {})
                     token = delta.get("text", "")
                     if token:
                         on_token(token)
                         collected.append(token)
-    return "".join(collected)
+                elif event_type == "message_delta":
+                    output_tokens = data.get("usage", {}).get("output_tokens", 0)
+                    if output_tokens > 0:
+                        got_usage = True
+
+    text = "".join(collected)
+    if not got_usage:
+        input_tokens = max(1, int(len(f"{system} {user}".split()) * 1.3))
+        output_tokens = max(1, int(len(text.split()) * 1.3))
+
+    return CompleteResult(
+        text=text,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        is_estimated=not got_usage,
+    )
 
 
 def _call_openai(
@@ -155,7 +188,7 @@ def _call_openai(
     user: str,
     words: int,
     on_token: Callable[[str], None] | None = None,
-) -> str:
+) -> CompleteResult:
     max_tokens = words * 2
 
     if on_token is None:
@@ -176,15 +209,26 @@ def _call_openai(
             timeout=60.0,
         )
         resp.raise_for_status()
-        choices = resp.json().get("choices", [])
+        data = resp.json()
+        choices = data.get("choices", [])
         if not choices or "message" not in choices[0]:
             raise ProviderError(f"OpenAI returned no choices: {resp.text[:200]}")
         content = choices[0]["message"].get("content")
         if content is None:
             raise ProviderError(f"OpenAI returned null content: {choices[0]}")
-        return content
+        usage = data.get("usage", {})
+        return CompleteResult(
+            text=content,
+            input_tokens=usage.get("prompt_tokens", max(1, int(len(f"{system} {user}".split()) * 1.3))),
+            output_tokens=usage.get("completion_tokens", max(1, int(len(content.split()) * 1.3))),
+            is_estimated="prompt_tokens" not in usage,
+        )
 
     collected: list[str] = []
+    input_tokens = 0
+    output_tokens = 0
+    got_usage = False
+
     with httpx.stream(
         "POST",
         "https://api.openai.com/v1/chat/completions",
@@ -196,6 +240,7 @@ def _call_openai(
             "model": model,
             "max_completion_tokens": max_tokens,
             "stream": True,
+            "stream_options": {"include_usage": True},
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -221,7 +266,23 @@ def _call_openai(
                     if token:
                         on_token(token)
                         collected.append(token)
-    return "".join(collected)
+                usage = data.get("usage")
+                if usage:
+                    input_tokens = usage.get("prompt_tokens", 0)
+                    output_tokens = usage.get("completion_tokens", 0)
+                    got_usage = True
+
+    text = "".join(collected)
+    if not got_usage:
+        input_tokens = max(1, int(len(f"{system} {user}".split()) * 1.3))
+        output_tokens = max(1, int(len(text.split()) * 1.3))
+
+    return CompleteResult(
+        text=text,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        is_estimated=not got_usage,
+    )
 
 
 def _call_gemini(
@@ -231,7 +292,7 @@ def _call_gemini(
     user: str,
     words: int,
     on_token: Callable[[str], None] | None = None,
-) -> str:
+) -> CompleteResult:
     max_tokens = words * 2 * 4
 
     if on_token is None:
@@ -264,13 +325,24 @@ def _call_gemini(
             text_parts = [p["text"] for p in parts if "text" in p]
         if not text_parts:
             raise ProviderError(f"Gemini returned no text content: {candidates[0]}")
-        return "".join(text_parts)
+        text = "".join(text_parts)
+        usage = data.get("usageMetadata", {})
+        return CompleteResult(
+            text=text,
+            input_tokens=usage.get("promptTokenCount", max(1, int(len(f"{system} {user}".split()) * 1.3))),
+            output_tokens=usage.get("candidatesTokenCount", max(1, int(len(text.split()) * 1.3))),
+            is_estimated="promptTokenCount" not in usage,
+        )
 
     url = (
         f"https://generativelanguage.googleapis.com/v1beta/"
         f"models/{model}:streamGenerateContent?alt=sse"
     )
     collected: list[str] = []
+    input_tokens = 0
+    output_tokens = 0
+    got_usage = False
+
     with httpx.stream(
         "POST",
         url,
@@ -304,7 +376,23 @@ def _call_gemini(
                             if token:
                                 on_token(token)
                                 collected.append(token)
-    return "".join(collected)
+                usage = data.get("usageMetadata")
+                if usage:
+                    input_tokens = usage.get("promptTokenCount", 0)
+                    output_tokens = usage.get("candidatesTokenCount", 0)
+                    got_usage = True
+
+    text = "".join(collected)
+    if not got_usage:
+        input_tokens = max(1, int(len(f"{system} {user}".split()) * 1.3))
+        output_tokens = max(1, int(len(text.split()) * 1.3))
+
+    return CompleteResult(
+        text=text,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        is_estimated=not got_usage,
+    )
 
 
 def _call_openrouter(
@@ -314,7 +402,7 @@ def _call_openrouter(
     user: str,
     words: int,
     on_token: Callable[[str], None] | None = None,
-) -> str:
+) -> CompleteResult:
     max_tokens = words * 2
 
     if on_token is None:
@@ -337,15 +425,26 @@ def _call_openrouter(
             timeout=60.0,
         )
         resp.raise_for_status()
-        choices = resp.json().get("choices", [])
+        data = resp.json()
+        choices = data.get("choices", [])
         if not choices or "message" not in choices[0]:
             raise ProviderError(f"OpenRouter returned no choices: {resp.text[:200]}")
         content = choices[0]["message"].get("content")
         if content is None:
             raise ProviderError(f"OpenRouter returned null content: {choices[0]}")
-        return content
+        usage = data.get("usage", {})
+        return CompleteResult(
+            text=content,
+            input_tokens=usage.get("prompt_tokens", max(1, int(len(f"{system} {user}".split()) * 1.3))),
+            output_tokens=usage.get("completion_tokens", max(1, int(len(content.split()) * 1.3))),
+            is_estimated="prompt_tokens" not in usage,
+        )
 
     collected: list[str] = []
+    input_tokens = 0
+    output_tokens = 0
+    got_usage = False
+
     with httpx.stream(
         "POST",
         "https://openrouter.ai/api/v1/chat/completions",
@@ -359,6 +458,7 @@ def _call_openrouter(
             "model": model,
             "max_tokens": max_tokens,
             "stream": True,
+            "stream_options": {"include_usage": True},
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -384,7 +484,23 @@ def _call_openrouter(
                     if token:
                         on_token(token)
                         collected.append(token)
-    return "".join(collected)
+                usage = data.get("usage")
+                if usage:
+                    input_tokens = usage.get("prompt_tokens", 0)
+                    output_tokens = usage.get("completion_tokens", 0)
+                    got_usage = True
+
+    text = "".join(collected)
+    if not got_usage:
+        input_tokens = max(1, int(len(f"{system} {user}".split()) * 1.3))
+        output_tokens = max(1, int(len(text.split()) * 1.3))
+
+    return CompleteResult(
+        text=text,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        is_estimated=not got_usage,
+    )
 
 
 # ── Retry logic ───────────────────────────────────────────────────────────
@@ -398,7 +514,7 @@ def _with_retry(
     user: str,
     words: int,
     on_token: Callable[[str], None] | None = None,
-) -> str:
+) -> CompleteResult:
     """Retry on 429/5xx and network errors up to 2 extra attempts with backoff. No retry on 400/401."""
     last_exc: Exception | None = None
     for attempt in range(len(_BACKOFFS) + 1):

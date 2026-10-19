@@ -1,0 +1,5 @@
+{"id": "gen-01", "provider": "OpenRouter", "model": "anthropic/claude-sonnet-5-5", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "OpenRouter "}}]}
+{"id": "gen-01", "provider": "OpenRouter", "model": "anthropic/claude-sonnet-5-5", "choices": [{"index": 0, "delta": {"content": "streaming "}}]}
+{"id": "gen-01", "provider": "OpenRouter", "model": "anthropic/claude-sonnet-5-5", "choices": [{"index": 0, "delta": {"content": "works!"}}]}
+{"id": "gen-01", "provider": "OpenRouter", "model": "anthropic/claude-sonnet-5-5", "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 28, "completion_tokens": 5, "total_tokens": 33}}
+[DONE]

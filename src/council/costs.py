@@ -26,20 +26,33 @@ TOKENS_PER_WORD = 1.3
 
 
 class CostTracker:
-    """Tracks token volume and calculates estimated cost per session."""
+    """Tracks token volume and calculates cost per session."""
 
     def __init__(self) -> None:
         self.total_input_tokens: int = 0
         self.total_output_tokens: int = 0
         self.total_cost_usd: float = 0.0
+        self.has_estimated: bool = False
 
-    def record_turn(self, model: str, input_text: str, output_text: str) -> None:
-        """Record input and output text for a turn and accumulate estimated tokens and cost."""
-        in_words = len(input_text.split())
-        out_words = len(output_text.split())
-
-        in_tokens = max(1, int(in_words * TOKENS_PER_WORD))
-        out_tokens = max(1, int(out_words * TOKENS_PER_WORD))
+    def record_turn(
+        self,
+        model: str,
+        input_text: str,
+        output_text: str,
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+        is_estimated: bool = True,
+    ) -> None:
+        """Record input and output tokens and accumulate cost."""
+        if input_tokens is not None and output_tokens is not None and not is_estimated:
+            in_tokens = input_tokens
+            out_tokens = output_tokens
+        else:
+            in_words = len(input_text.split())
+            out_words = len(output_text.split())
+            in_tokens = max(1, int(in_words * TOKENS_PER_WORD))
+            out_tokens = max(1, int(out_words * TOKENS_PER_WORD))
+            self.has_estimated = True
 
         self.total_input_tokens += in_tokens
         self.total_output_tokens += out_tokens
@@ -58,8 +71,10 @@ class CostTracker:
         self.total_cost_usd += cost
 
     def summary(self) -> str:
-        """Format a concise summary string."""
+        """Format a concise summary string with estimation indication."""
+        label = "est." if self.has_estimated else "exact"
+        prefix = "~" if self.has_estimated else ""
         return (
-            f"Tokens: ~{self.total_input_tokens:,} in / ~{self.total_output_tokens:,} out  ·  "
-            f"Est. cost: ${self.total_cost_usd:.4f}"
+            f"Tokens: {prefix}{self.total_input_tokens:,} in / {prefix}{self.total_output_tokens:,} out  ·  "
+            f"Est. cost: ${self.total_cost_usd:.4f} ({label})"
         )

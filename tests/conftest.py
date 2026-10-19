@@ -17,18 +17,20 @@ FAKE_RESPONSES: dict[str, str] = {
 @pytest.fixture
 def fake_complete(monkeypatch):
     """Patch council.providers.complete to return deterministic mock responses."""
+    from council.models import CompleteResult
+
     def _fake(
         member: Member,
         system_prompt: str,
         user_prompt: str,
         words: int = 120,
         on_token=None,
-    ) -> str:
+    ) -> CompleteResult:
         text = FAKE_RESPONSES.get(member.name, f"{member.name} test response.")
         if on_token:
             for word in text.split():
                 on_token(word + " ")
-        return text
+        return CompleteResult(text=text, input_tokens=20, output_tokens=10, is_estimated=False)
 
     monkeypatch.setattr("council.providers.complete", _fake)
     return _fake
@@ -77,19 +79,21 @@ def default_config() -> CouncilConfig:
 @pytest.fixture
 def failing_skeptic_complete(monkeypatch):
     """Patch council.providers.complete to fail for Skeptic (bad key) while others succeed."""
+    from council.models import CompleteResult
+
     def _fake(
         member: Member,
         system_prompt: str,
         user_prompt: str,
         words: int = 120,
         on_token=None,
-    ) -> str:
+    ) -> CompleteResult:
         if member.name == "Skeptic":
             raise ProviderError("401: Invalid API key")
         text = FAKE_RESPONSES.get(member.name, f"{member.name} test response.")
         if on_token:
             on_token(text)
-        return text
+        return CompleteResult(text=text, input_tokens=20, output_tokens=10, is_estimated=False)
 
     monkeypatch.setattr("council.providers.complete", _fake)
     return _fake

@@ -71,7 +71,7 @@ def run(
 
             engine.record_cost(member, system, user, text)
             engine.transcript.append(
-                TranscriptEntry(speaker=member.name, kind="member", text=text)
+                TranscriptEntry(speaker=member.name, kind="member", text=str(text))
             )
     else:
         # Standard round-robin
@@ -91,7 +91,7 @@ def run(
 
                 engine.record_cost(member, system, user, text)
                 engine.transcript.append(
-                    TranscriptEntry(speaker=member.name, kind="member", text=text)
+                    TranscriptEntry(speaker=member.name, kind="member", text=str(text))
                 )
 
     # ── Chair auto-summary ────────────────────────────────────
@@ -104,7 +104,7 @@ def run(
                 text = providers.complete(chair, system, user, config.words, on_token=sr.on_token)
             engine.record_cost(chair, system, user, text)
             engine.transcript.append(
-                TranscriptEntry(speaker=chair.name, kind="chair", text=text)
+                TranscriptEntry(speaker=chair.name, kind="chair", text=str(text))
             )
         except providers.ProviderError as err:
             render.print_error(chair.name, err)
