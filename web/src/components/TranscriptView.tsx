@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { AlertCircle, RotateCcw, Crown, Sparkles, User, Terminal } from "lucide-react";
 import { marked } from "marked";
+import { Icon } from "./Icon";
+import { StatusPill } from "./StatusPill";
 import { TranscriptEntry, getMemberTone } from "../types";
 
 interface TranscriptViewProps {
@@ -54,69 +55,104 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-4 transition-colors">
+    <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-4 transition-colors duration-150">
       <div className="max-w-3xl mx-auto space-y-4">
         {/* Topic Header banner */}
         {topic && (
-          <div className="pb-4 mb-4 border-b border-[var(--council-border)]">
-            <div className="flex items-center space-x-2 font-mono text-[11px] uppercase tracking-wider text-[var(--council-text-muted)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--council-accent)]" />
-              <span>Deliberation Thread · Round {roundNumber}</span>
+          <div className="pb-4 mb-2 border-b border-subtle">
+            <div className="flex items-center gap-2 font-mono text-[12px] leading-[16px] text-text-tertiary">
+              <span className="text-text-tertiary">•</span>
+              <span>Deliberation Transcript</span>
+              {roundNumber > 1 && <span>· Round {roundNumber}</span>}
             </div>
-            <h1 className="text-lg md:text-xl font-semibold mt-1 text-[var(--council-text)] tracking-tight">
+            <h2 className="text-[18px] md:text-[20px] leading-[26px] md:leading-[28px] font-semibold text-text-primary mt-1 tracking-tight">
               {topic}
-            </h1>
+            </h2>
           </div>
         )}
 
+        {/* Empty state: Setup checklist in list-row style */}
         {transcript.length === 0 ? (
-          <div className="py-16 flex flex-col items-center justify-center text-center p-8 bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded-xl my-6">
-            <div className="w-12 h-12 rounded-full bg-[var(--council-surface-2)] border border-[var(--council-border-strong)] flex items-center justify-center text-[var(--council-accent)] mb-4">
-              <Terminal className="w-6 h-6" />
-            </div>
-            <span className="font-mono text-xs uppercase tracking-wider text-[var(--council-text-muted)]">
-              A local room for hard questions
-            </span>
-            <h2 className="text-lg font-semibold text-[var(--council-text)] mt-1 mb-2">
-              Build the council before the first round.
-            </h2>
-            <p className="text-xs text-[var(--council-text-muted)] max-w-md leading-relaxed mb-6">
-              Add at least one provider key, review the personas, then start with a question that benefits from structured disagreement.
-            </p>
-
-            {/* 3 Step Roadmap */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full max-w-lg mb-6 border-t border-b border-[var(--council-border)] py-3 text-left">
-              <div className="px-3 py-1">
-                <code className="text-[10px] text-[var(--council-accent)] font-semibold">01</code>
-                <div className="text-xs font-medium text-[var(--council-text)]">Add provider keys</div>
-              </div>
-              <div className="px-3 py-1 border-t sm:border-t-0 sm:border-l border-[var(--council-border)]">
-                <code className="text-[10px] text-[var(--council-accent)] font-semibold">02</code>
-                <div className="text-xs font-medium text-[var(--council-text)]">Review personas</div>
-              </div>
-              <div className="px-3 py-1 border-t sm:border-t-0 sm:border-l border-[var(--council-border)]">
-                <code className="text-[10px] text-[var(--council-accent)] font-semibold">03</code>
-                <div className="text-xs font-medium text-[var(--council-text)]">Open the debate</div>
-              </div>
+          <div className="py-12 flex flex-col space-y-4">
+            <div className="text-center max-w-md mx-auto mb-2">
+              <h3 className="text-[16px] leading-[24px] font-semibold text-text-primary">
+                Deliberation Setup
+              </h3>
+              <p className="text-[13px] leading-[18px] text-text-secondary mt-1">
+                Complete setup or select a topic to begin the debate.
+              </p>
             </div>
 
-            <div className="flex items-center space-x-2">
-              {onOpenKeys && (
-                <button
-                  onClick={onOpenKeys}
-                  className="px-3 py-1.5 rounded-lg bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] border border-[var(--council-border)] text-xs font-medium text-[var(--council-text)] transition"
-                >
-                  Configure keys
-                </button>
-              )}
-              {onNewDebate && (
-                <button
-                  onClick={onNewDebate}
-                  className="px-3 py-1.5 rounded-lg bg-[var(--council-accent)] hover:opacity-90 text-[var(--bg-canvas)] text-xs font-semibold transition"
-                >
-                  Start debate
-                </button>
-              )}
+            <div className="space-y-2">
+              {/* Checklist Row 1: Add API keys */}
+              <button
+                onClick={onOpenKeys}
+                className="w-full text-left group rounded-[12px] p-4 bg-surface-2 border border-subtle hover:border-strong transition-colors duration-150 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-pill bg-surface-3 flex items-center justify-center text-text-secondary">
+                    <Icon name="key-round" size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-[14px] leading-[20px] font-semibold text-text-primary">
+                      1. Add provider API keys
+                    </h4>
+                    <p className="text-[13px] leading-[18px] text-text-secondary">
+                      Anthropic, OpenAI, Gemini, or OpenRouter keys stored locally
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <StatusPill variant="neutral" label="Required" showDot={false} />
+                  <span className="text-text-tertiary group-hover:translate-x-0.5 transition-transform duration-150">
+                    <Icon name="chevron-right" size={16} />
+                  </span>
+                </div>
+              </button>
+
+              {/* Checklist Row 2: Review members */}
+              <div className="rounded-[12px] p-4 bg-surface-2 border border-subtle flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-pill bg-surface-3 flex items-center justify-center text-text-secondary">
+                    <Icon name="settings" size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-[14px] leading-[20px] font-semibold text-text-primary">
+                      2. Review council personas
+                    </h4>
+                    <p className="text-[13px] leading-[18px] text-text-secondary">
+                      Skeptic, Builder, Visionary, and Chair ready
+                    </p>
+                  </div>
+                </div>
+                <StatusPill variant="success" label="Configured" />
+              </div>
+
+              {/* Checklist Row 3: Start a debate */}
+              <button
+                onClick={onNewDebate}
+                className="w-full text-left group rounded-[12px] p-4 bg-surface-2 border border-subtle hover:border-strong transition-colors duration-150 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-pill bg-surface-3 flex items-center justify-center text-text-secondary">
+                    <Icon name="play" size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-[14px] leading-[20px] font-semibold text-text-primary">
+                      3. Start a debate
+                    </h4>
+                    <p className="text-[13px] leading-[18px] text-text-secondary">
+                      Enter a question or choose from suggested topics
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <StatusPill variant="success" label="Ready" />
+                  <span className="text-text-tertiary group-hover:translate-x-0.5 transition-transform duration-150">
+                    <Icon name="chevron-right" size={16} />
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
         ) : (
@@ -130,34 +166,30 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
               return (
                 <article
                   key={entry.id || idx}
-                  className="rounded-lg p-4 bg-[var(--council-surface-1)] border border-[var(--council-border)] border-l-2 border-l-[var(--council-danger)] text-xs shadow-sm space-y-2"
+                  className="rounded-[12px] p-4 bg-surface-2 border border-subtle border-l-2 border-l-accent-danger space-y-2.5 transition-colors duration-150"
                 >
-                  <div className="flex items-center justify-between pb-2 border-b border-[var(--council-border)]">
-                    <div className="flex items-center space-x-2">
-                      <span className="w-2 h-2 rounded-full bg-[var(--council-danger)]" />
-                      <strong className="text-[var(--council-text)] font-semibold">
+                  <div className="flex items-center justify-between pb-2 border-b border-subtle">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-accent-danger" />
+                      <strong className="text-[14px] leading-[20px] font-semibold text-text-primary">
                         {entry.speaker}
                       </strong>
-                      <span className="px-1.5 py-0.2 rounded text-[10px] bg-red-950/40 text-[var(--council-danger)] border border-red-800/40 font-mono">
-                        Failed
-                      </span>
+                      <StatusPill variant="danger" label="Failed" />
                     </div>
-                    <code className="text-[10px] text-[var(--council-text-faint)]">
-                      error turn
-                    </code>
+                    {onRetrySpeaker && (
+                      <button
+                        onClick={() => onRetrySpeaker(entry.speaker)}
+                        className="text-text-secondary hover:text-text-primary hover:bg-surface-3 px-2.5 py-1 rounded-pill text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors duration-150"
+                        title="Retry this speaker's turn"
+                      >
+                        <Icon name="rotate-ccw" size={12} />
+                        <span>Retry</span>
+                      </button>
+                    )}
                   </div>
-                  <div className="text-[var(--council-danger)] font-mono text-[11px] leading-relaxed break-words">
+                  <div className="text-accent-danger font-mono text-[12px] leading-[18px] break-words">
                     {entry.text}
                   </div>
-                  {onRetrySpeaker && (
-                    <button
-                      onClick={() => onRetrySpeaker(entry.speaker)}
-                      className="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] border border-[var(--council-border)] text-[var(--council-text)] text-xs font-medium transition"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      <span>Retry member</span>
-                    </button>
-                  )}
                 </article>
               );
             }
@@ -166,47 +198,43 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
               <article
                 key={entry.id || idx}
                 style={{
-                  borderLeftColor: toneColor,
+                  borderLeftColor: isUser ? "var(--member-user)" : toneColor,
                   borderLeftWidth: "2px",
                 }}
-                className={`rounded-lg p-4 bg-[var(--council-surface-1)] border border-[var(--council-border)] shadow-sm transition-all ${
-                  entry.is_streaming ? "ring-1 ring-[var(--council-accent)]/50" : ""
-                }`}
+                className={`rounded-[12px] p-4 border border-subtle transition-colors duration-150 ${
+                  isUser ? "bg-surface-3" : "bg-surface-2"
+                } ${entry.is_streaming ? "ring-1 ring-border-strong" : ""}`}
               >
                 {/* Meta Header */}
-                <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-[var(--council-border)]">
-                  <div className="flex items-center space-x-2 min-w-0">
+                <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-subtle">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span
                       className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: toneColor }}
+                      style={{ backgroundColor: isUser ? "var(--member-user)" : toneColor }}
                       aria-hidden="true"
                     />
-                    <strong className="text-xs font-semibold text-[var(--council-text)] truncate">
+                    <strong className="text-[14px] leading-[20px] font-semibold text-text-primary truncate">
                       {isUser ? "You" : entry.speaker}
                     </strong>
 
                     {entry.is_chair && (
-                      <span className="inline-flex items-center space-x-0.5 text-[10px] font-mono font-medium text-[var(--council-warning)] bg-[var(--council-surface-2)] border border-[var(--council-border)] px-1.5 py-0.2 rounded-full shrink-0">
-                        <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                        Synthesis
-                      </span>
+                      <StatusPill variant="warning" label="Synthesis" showDot={false} />
                     )}
 
                     {entry.is_streaming && (
-                      <span className="inline-flex items-center space-x-1 text-[10px] font-mono text-[var(--council-accent)] bg-[var(--council-success-bg)] px-1.5 py-0.2 rounded-full shrink-0">
-                        <span>Streaming</span>
-                      </span>
+                      <StatusPill variant="success" label="Streaming" />
                     )}
 
                     {entry.round && !isUser && (
-                      <span className="text-[10px] font-mono text-[var(--council-text-faint)] shrink-0">
+                      <span className="text-[12px] font-mono text-text-tertiary">
                         R{entry.round}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-2 text-[10px] text-[var(--council-text-faint)] font-mono shrink-0">
-                    {entry.output_tokens !== undefined && entry.output_tokens > 0 && (
+                  <div className="flex items-center gap-2 text-[12px] leading-[16px] font-mono text-text-tertiary shrink-0">
+                    {/* Never show token count beside You */}
+                    {!isUser && entry.output_tokens !== undefined && entry.output_tokens > 0 && (
                       <span>
                         {entry.input_tokens || 0} in · {entry.output_tokens} out
                       </span>
@@ -215,8 +243,8 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
                   </div>
                 </div>
 
-                {/* Entry Text / Prose */}
-                <div className="prose-transcript text-[var(--council-text)] leading-relaxed">
+                {/* Entry Text / Prose: 15/24 transcript reading body text */}
+                <div className="prose-transcript text-[15px] leading-[24px] text-text-primary">
                   <div dangerouslySetInnerHTML={renderContent(entry.text || "...")} />
                   {entry.is_streaming && <span className="streaming-caret" />}
                 </div>

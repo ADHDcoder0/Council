@@ -1,8 +1,9 @@
 import React, { useState, KeyboardEvent } from "react";
-import { Play, Sparkles, Compass, Square, Send, Bookmark } from "lucide-react";
+import { Icon } from "./Icon";
 
 interface ComposerProps {
   isStreaming: boolean;
+  activeSpeaker?: string | null;
   onSendMessage: (text: string) => void;
   onRunRound: (rounds: number) => void;
   onRunSummary: () => void;
@@ -14,6 +15,7 @@ interface ComposerProps {
 
 export const Composer: React.FC<ComposerProps> = ({
   isStreaming,
+  activeSpeaker,
   onSendMessage,
   onRunRound,
   onRunSummary,
@@ -39,106 +41,122 @@ export const Composer: React.FC<ComposerProps> = ({
   };
 
   return (
-    <div className="border-t border-[var(--council-border)] bg-[var(--council-surface-1)] p-3 md:p-4 shrink-0 transition-colors">
-      <div className="max-w-4xl mx-auto flex flex-col space-y-3">
-        {/* Input box */}
-        <div className="relative flex items-end bg-[var(--council-canvas)] border border-[var(--council-border)] rounded-lg p-2 focus-within:border-[var(--council-accent)] transition">
+    <div className="border-t border-subtle bg-surface-1 p-3 md:p-4 shrink-0 transition-colors duration-150 select-none">
+      <div className="max-w-3xl mx-auto flex flex-col gap-3">
+        {/* Progress line above the bar in caption style */}
+        {isStreaming && (
+          <div className="flex items-center gap-2 text-[12px] leading-[16px] font-mono text-text-secondary animate-fade-in">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-success animate-pulse" />
+            <span>
+              {activeSpeaker
+                ? `${activeSpeaker} is responding…`
+                : "Council is deliberating…"}
+            </span>
+          </div>
+        )}
+
+        {/* Composer box (16px radius, surface-1, hairline border, focus ring to border-strong) */}
+        <div className="rounded-[16px] bg-surface-1 border border-subtle focus-within:border-strong p-3 flex flex-col gap-2 transition-colors duration-150">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Steer the council or add a counterargument…  Ctrl + Enter to send"
+            placeholder="Steer the council or add a counterargument…"
             rows={2}
-            className="w-full bg-transparent text-xs text-[var(--council-text)] placeholder-[var(--council-text-faint)] focus:outline-none resize-none px-2 py-1 max-h-28"
+            className="w-full bg-transparent text-[14px] leading-[20px] text-text-primary placeholder:text-text-tertiary focus:outline-none resize-none px-1 py-0.5 max-h-32"
           />
-          <button
-            onClick={handleSend}
-            disabled={!inputText.trim() || isStreaming}
-            className="ml-2 px-3 py-1.5 rounded-md bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] border border-[var(--council-border)] disabled:opacity-40 text-[var(--council-text)] text-xs font-medium transition flex items-center space-x-1 shrink-0"
-            title="Inject message into transcript"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Interject</span>
-          </button>
+
+          <div className="flex items-center justify-between pt-1 border-t border-subtle/50">
+            {/* Hint text in caption style: "Ctrl+Enter to send" */}
+            <span className="text-[12px] leading-[16px] font-mono text-text-tertiary">
+              Ctrl+Enter to send
+            </span>
+
+            {/* Send is a pill primary button inside composer bottom-right (40px height) */}
+            <button
+              onClick={handleSend}
+              disabled={!inputText.trim() || isStreaming}
+              className="h-10 px-4 rounded-pill bg-btn-primary-bg text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-40 text-[13px] leading-[18px] font-medium transition-colors duration-150 flex items-center gap-1.5 shadow-none"
+              title="Send message"
+            >
+              <Icon name="send" size={16} />
+              <span>Send</span>
+            </button>
+          </div>
         </div>
 
-        {/* Action Controls Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+        {/* Run bar: Pill group (Run round / Stop, stepper, Summary, Moderator, Save) */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Rounds Selector & Run Round */}
-            <div className="inline-flex rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] overflow-hidden shadow-sm">
+            {/* Run round pill / Stop button */}
+            {isStreaming ? (
               <button
-                onClick={() => onRunRound(roundsCount)}
-                disabled={isStreaming}
-                className="flex items-center space-x-1.5 px-3 py-1.5 bg-[var(--council-accent)] hover:opacity-90 disabled:opacity-50 text-[var(--bg-canvas)] text-xs font-semibold transition"
-                title={`Run ${roundsCount} debate round(s)`}
+                onClick={onStop}
+                className="h-9 px-3.5 rounded-pill bg-accent-danger text-white hover:opacity-90 text-[13px] leading-[18px] font-medium transition-colors duration-150 flex items-center gap-1.5 shadow-none"
+                title="Stop current speaker"
               >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>{isStreaming ? "Running…" : "Run round"}</span>
+                <Icon name="square" size={14} />
+                <span>Stop</span>
               </button>
-              <select
-                value={roundsCount}
-                onChange={(e) => setRoundsCount(Number(e.target.value))}
-                disabled={isStreaming}
-                className="bg-[var(--council-surface-2)] text-[var(--council-text)] text-xs px-2 py-1.5 border-l border-[var(--council-border)] focus:outline-none cursor-pointer"
-                title="Number of rounds"
-              >
-                <option value={1}>1 round</option>
-                <option value={2}>2 rounds</option>
-                <option value={3}>3 rounds</option>
-                <option value={5}>5 rounds</option>
-              </select>
-            </div>
+            ) : (
+              <div className="inline-flex items-center rounded-pill bg-btn-primary-bg text-btn-primary-text hover:bg-btn-primary-hover transition-colors duration-150 overflow-hidden">
+                <button
+                  onClick={() => onRunRound(roundsCount)}
+                  className="h-9 pl-3.5 pr-2.5 text-[13px] leading-[18px] font-medium flex items-center gap-1.5"
+                  title={`Run ${roundsCount} debate round(s)`}
+                >
+                  <Icon name="play" size={14} />
+                  <span>Run round</span>
+                </button>
+                <select
+                  value={roundsCount}
+                  onChange={(e) => setRoundsCount(Number(e.target.value))}
+                  className="h-9 pr-3 pl-1.5 bg-transparent text-[12px] leading-[16px] font-mono font-medium border-l border-black/15 focus:outline-none cursor-pointer"
+                  title="Select rounds to run"
+                >
+                  <option value={1} className="bg-surface-2 text-text-primary">1</option>
+                  <option value={2} className="bg-surface-2 text-text-primary">2</option>
+                  <option value={3} className="bg-surface-2 text-text-primary">3</option>
+                  <option value={5} className="bg-surface-2 text-text-primary">5</option>
+                </select>
+              </div>
+            )}
 
-            {/* Run Chair Summary */}
+            {/* Ghost pill for Summary */}
             {hasChair && (
               <button
                 onClick={onRunSummary}
                 disabled={isStreaming}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] disabled:opacity-50 text-[var(--council-text)] text-xs font-medium transition"
-                title="Ask the chair for a synthesized summary"
+                className="h-9 px-3 rounded-pill text-text-secondary hover:text-text-primary hover:bg-surface-3 disabled:opacity-40 text-[13px] leading-[18px] font-medium transition-colors duration-150 flex items-center gap-1.5"
+                title="Synthesize debate summary"
               >
-                <Sparkles className="w-3.5 h-3.5 text-[var(--council-warning)]" />
-                <span>Ask Chair</span>
+                <Icon name="file-text" size={16} />
+                <span>Summary</span>
               </button>
             )}
 
-            {/* Moderator Turn */}
+            {/* Ghost pill for Moderator turn */}
             <button
               onClick={onRunModerator}
               disabled={isStreaming}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] disabled:opacity-50 text-[var(--council-text)] text-xs font-medium transition"
-              title="Let the moderator dynamically choose the next speaker"
+              className="h-9 px-3 rounded-pill text-text-secondary hover:text-text-primary hover:bg-surface-3 disabled:opacity-40 text-[13px] leading-[18px] font-medium transition-colors duration-150 flex items-center gap-1.5"
+              title="Let the moderator dynamically direct the debate"
             >
-              <Compass className="w-3.5 h-3.5 text-[var(--council-accent)]" />
+              <Icon name="compass" size={16} />
               <span>Moderator turn</span>
             </button>
           </div>
 
-          <div className="flex items-center space-x-2">
-            {/* Stop Active Member button */}
-            {isStreaming && (
-              <button
-                onClick={onStop}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition animate-pulse"
-                title="Cancel ongoing completion"
-              >
-                <Square className="w-3.5 h-3.5 fill-current" />
-                <span>Stop member</span>
-              </button>
-            )}
-
-            {/* Save Session */}
-            <button
-              onClick={onSave}
-              disabled={isStreaming}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] disabled:opacity-50 text-[var(--council-text-muted)] hover:text-[var(--council-text)] text-xs font-medium transition"
-              title="Save markdown to ~/council-sessions/"
-            >
-              <Bookmark className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Save session</span>
-            </button>
-          </div>
+          {/* Secondary pill for Save session */}
+          <button
+            onClick={onSave}
+            disabled={isStreaming}
+            className="h-9 px-3 rounded-pill bg-btn-secondary-bg hover:bg-btn-secondary-hover border border-subtle text-text-secondary hover:text-text-primary disabled:opacity-40 text-[13px] leading-[18px] font-medium transition-colors duration-150 flex items-center gap-1.5"
+            title="Save markdown to ~/council-sessions/"
+          >
+            <Icon name="bookmark" size={16} />
+            <span className="hidden sm:inline">Save session</span>
+          </button>
         </div>
       </div>
     </div>

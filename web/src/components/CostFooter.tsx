@@ -1,5 +1,5 @@
 import React from "react";
-import { Cpu, Terminal } from "lucide-react";
+import { StatusPill } from "./StatusPill";
 
 interface CostFooterProps {
   inputTokens: number;
@@ -19,57 +19,42 @@ export const CostFooter: React.FC<CostFooterProps> = ({
   activeSpeaker,
 }) => {
   return (
-    <footer className="h-8 border-t border-[var(--council-border)] bg-[var(--council-surface-1)] px-4 flex items-center justify-between text-xs text-[var(--council-text-muted)] select-none shrink-0 transition-colors">
-      <div className="flex items-center space-x-3 text-[11px] font-mono">
-        {/* Token counts */}
-        <div className="flex items-center space-x-1.5">
-          <Cpu className="w-3 h-3 text-[var(--council-text-faint)]" />
-          <span>
-            {isCostEstimated ? "~" : ""}
-            {inputTokens.toLocaleString()} in
-          </span>
-          <span className="text-[var(--council-text-faint)]">/</span>
-          <span>
-            {isCostEstimated ? "~" : ""}
-            {outputTokens.toLocaleString()} out
-          </span>
+    <footer className="h-9 border-t border-subtle bg-surface-1 px-4 md:px-6 flex items-center justify-between text-[12px] leading-[16px] font-mono text-text-tertiary select-none shrink-0 transition-colors duration-150">
+      {/* Left: Tokens in and out, cost, StatusPill Exact or Estimated */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 text-text-secondary">
+          <span>{inputTokens.toLocaleString()} in</span>
+          <span className="text-text-tertiary">·</span>
+          <span>{outputTokens.toLocaleString()} out</span>
         </div>
 
-        <span className="text-[var(--council-border-strong)]">|</span>
+        <span className="text-border-strong">|</span>
 
-        {/* Cost & Accuracy Badge */}
-        <div className="flex items-center space-x-1.5">
-          <span className="font-semibold text-[var(--council-text)]">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-text-primary">
             ${totalCostUsd.toFixed(4)}
           </span>
-          <span
-            className={`text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-medium ${
-              isCostEstimated
-                ? "bg-amber-950/40 text-amber-400 border border-amber-800/40"
-                : "bg-[var(--council-success-bg)] text-[var(--council-accent)] border border-[var(--council-accent)]/30"
-            }`}
+          <StatusPill
+            variant={isCostEstimated ? "warning" : "success"}
+            label={isCostEstimated ? "ESTIMATED" : "EXACT"}
             title={
               isCostEstimated
                 ? "Usage estimated (~1.3 tok/word fallback)"
                 : "Exact tokens reported by provider API"
             }
-          >
-            {isCostEstimated ? "Estimated" : "Exact"}
-          </span>
+          />
         </div>
       </div>
 
-      <div className="flex items-center space-x-2 text-[11px]">
+      {/* Right: Runtime status / host */}
+      <div className="flex items-center gap-2 text-text-tertiary">
         {isStreaming ? (
-          <div className="flex items-center space-x-1.5 text-[var(--council-accent)] font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--council-accent)] animate-ping" />
+          <span className="text-accent-success font-medium flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-success animate-pulse" />
             <span>{activeSpeaker ? `${activeSpeaker} speaking…` : "Deliberating…"}</span>
-          </div>
+          </span>
         ) : (
-          <div className="flex items-center space-x-1 text-[var(--council-text-faint)] font-mono text-[10px]">
-            <Terminal className="w-3 h-3" />
-            <span>Local · 127.0.0.1</span>
-          </div>
+          <span>127.0.0.1 · Ready</span>
         )}
       </div>
     </footer>

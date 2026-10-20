@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Check } from "lucide-react";
+import { Icon } from "./Icon";
 import { MemberInfo, getMemberTone } from "../types";
 
 interface EditMemberModalProps {
@@ -44,38 +44,35 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in select-none">
-      <div
-        style={{ borderTopColor: getToneColor(), borderTopWidth: "3px" }}
-        className="w-full max-w-md bg-[var(--council-surface-1)] border border-[var(--council-border-strong)] rounded-xl flex flex-col shadow-2xl overflow-hidden transition-colors"
-      >
-        <div className="p-4 border-b border-[var(--council-border)] flex items-center justify-between bg-[var(--council-surface-2)]">
-          <div className="flex items-center space-x-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in select-none">
+      <div className="w-full max-w-md bg-surface-1 border border-subtle rounded-[16px] flex flex-col shadow-none overflow-hidden transition-colors duration-150">
+        <div className="h-14 px-6 border-b border-subtle flex items-center justify-between bg-surface-1">
+          <div className="flex items-center gap-2">
             <span
-              className="w-2.5 h-2.5 rounded-full"
+              className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: getToneColor() }}
             />
-            <h3 className="font-semibold text-sm text-[var(--council-text)]">
+            <h3 className="text-[16px] leading-[24px] font-semibold text-text-primary">
               Edit Persona: {member.name}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-[var(--council-text-muted)] hover:text-[var(--council-text)] hover:bg-[var(--council-surface-3)] transition"
+            className="p-1.5 rounded-pill text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors duration-150"
           >
-            <X className="w-4 h-4" />
+            <Icon name="x" size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-3.5 text-xs">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="text-[var(--council-text-muted)] block mb-1 font-medium">
+            <label className="text-[13px] font-medium text-text-primary block mb-1.5">
               Provider
             </label>
             <select
               value={provider}
               onChange={(e) => setProvider(e.target.value)}
-              className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-md p-2 text-[var(--council-text)] text-xs focus:outline-none focus:border-[var(--council-accent)]"
+              className="w-full bg-surface-2 border border-subtle rounded-btn p-2.5 text-[13px] text-text-primary focus:outline-none focus:border-strong"
             >
               <option value="anthropic">Anthropic</option>
               <option value="openai">OpenAI</option>
@@ -85,42 +82,41 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
           </div>
 
           <div>
-            <label className="text-[var(--council-text-muted)] block mb-1 font-medium">
+            <label className="text-[13px] font-medium text-text-primary block mb-1.5">
               Model ID
             </label>
             <input
               type="text"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-md p-2 text-[var(--council-text)] focus:outline-none focus:border-[var(--council-accent)] font-mono text-xs"
+              className="w-full bg-surface-2 border border-subtle rounded-btn p-2.5 text-text-primary font-mono text-[12px] focus:outline-none focus:border-strong"
             />
           </div>
 
           <div>
-            <label className="text-[var(--council-text-muted)] block mb-1 font-medium">
+            <label className="text-[13px] font-medium text-text-primary block mb-1.5">
               Role & Perspective
             </label>
             <textarea
               rows={4}
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-md p-2 text-[var(--council-text)] focus:outline-none focus:border-[var(--council-accent)] leading-relaxed text-xs"
+              className="w-full bg-surface-2 border border-subtle rounded-btn p-2.5 text-[13px] leading-[18px] text-text-primary focus:outline-none focus:border-strong"
             />
           </div>
 
-          <div className="pt-2 border-t border-[var(--council-border)] flex items-center justify-end space-x-2">
+          <div className="pt-4 border-t border-subtle flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] text-[var(--council-text-muted)] hover:text-[var(--council-text)] font-medium transition"
+              className="h-10 px-4 rounded-pill border border-subtle bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text-primary text-[13px] font-medium transition-colors duration-150"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-md bg-[var(--council-accent)] hover:opacity-90 text-[var(--bg-canvas)] font-semibold transition"
+              className="h-10 px-5 rounded-pill bg-btn-primary-bg text-btn-primary-text hover:bg-btn-primary-hover text-[13px] font-medium transition-colors duration-150 flex items-center gap-1.5"
             >
-              <Check className="w-3.5 h-3.5" />
               <span>Apply changes</span>
             </button>
           </div>

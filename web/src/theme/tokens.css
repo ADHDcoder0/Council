@@ -1,0 +1,84 @@
+:root,
+.dark {
+  /* Surfaces & Canvases */
+  --bg-canvas: #121212;
+  --bg-surface-1: #1a1a1a;
+  --bg-surface-2: #222222;
+  --bg-surface-3: #2a2a2a;
+  --bg-surface-hover: #303030;
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  /* Typography Colors - Text tertiary lifted to #8a8a8a for WCAG AA compliance on #222222 */
+  --text-primary: #f2f2f2;
+  --text-secondary: #a1a1a1;
+  --text-tertiary: #8a8a8a;
+
+  /* Semantic Status Colors */
+  --accent-success: #3ecf8e;
+  --accent-success-bg: rgba(62, 207, 142, 0.12);
+  --accent-warning: #f5b041;
+  --accent-warning-bg: rgba(245, 176, 65, 0.12);
+  --accent-danger: #f0616d;
+  --accent-danger-bg: rgba(240, 97, 109, 0.12);
+
+  /* Buttons & Action CTA (Single accent rule: neutral light fill, dark text) */
+  --btn-primary-bg: #f2f2f2;
+  --btn-primary-text: #121212;
+  --btn-primary-hover: #e5e5e5;
+  --btn-secondary-bg: #262626;
+  --btn-secondary-hover: #303030;
+
+  /* Council Member Identity Colors (2px left rule & status dot only) */
+  --member-skeptic: #ef4444;
+  --member-builder: #22c55e;
+  --member-visionary: #38bdf8;
+  --member-chair: #f59e0b;
+  --member-user: #a1a1a1;
+
+  /* Sizing, Radius & Motion */
+  --radius-pill: 999px;
+  --radius-btn: 10px;
+  --radius-panel: 12px;
+  --radius-composer: 16px;
+
+  --transition-fast: 150ms;
+  --transition-panel: 250ms;
+  --motion-easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+html:not(.dark) {
+  --bg-canvas: #f8f8f7;
+  --bg-surface-1: #ffffff;
+  --bg-surface-2: #f1f1ee;
+  --bg-surface-3: #e6e6e2;
+  --bg-surface-hover: #dcdcd8;
+
+  --border-subtle: rgba(18, 18, 18, 0.07);
+  --border-strong: rgba(18, 18, 18, 0.15);
+
+  --text-primary: #121212;
+  --text-secondary: #5f5f5f;
+  --text-tertiary: #757575;
+
+  --accent-success: #1f8a5a;
+  --accent-success-bg: rgba(31, 138, 90, 0.12);
+  --accent-warning: #b47514;
+  --accent-warning-bg: rgba(180, 117, 20, 0.12);
+  --accent-danger: #c53b30;
+  --accent-danger-bg: rgba(197, 59, 48, 0.12);
+
+  --btn-primary-bg: #121212;
+  --btn-primary-text: #f2f2f2;
+  --btn-primary-hover: #262626;
+  --btn-secondary-bg: #eaeae6;
+  --btn-secondary-hover: #deded8;
+
+  --member-skeptic: #dc2626;
+  --member-builder: #16a34a;
+  --member-visionary: #0284c7;
+  --member-chair: #d97706;
+  --member-user: #666666;
+}

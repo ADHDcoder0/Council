@@ -1,7 +1,8 @@
 import React from "react";
 import { MemberInfo, TranscriptEntry, getMemberTone } from "../types";
 import { TranscriptView } from "./TranscriptView";
-import { Mic, MicOff, Type, Crown, Terminal } from "lucide-react";
+import { StatusPill } from "./StatusPill";
+import { Icon } from "./Icon";
 
 interface ArenaViewProps {
   members: MemberInfo[];
@@ -27,25 +28,26 @@ export const ArenaView: React.FC<ArenaViewProps> = ({
   onNewDebate,
 }) => {
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-[var(--council-canvas)] transition-colors">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-canvas transition-colors duration-150">
       {/* Roundtable Stage Area */}
-      <div className="relative min-h-[360px] md:min-h-[420px] p-6 flex items-center justify-center border-b border-[var(--council-border)] overflow-hidden shrink-0">
+      <div className="relative min-h-[360px] md:min-h-[420px] p-6 flex items-center justify-center border-b border-subtle overflow-hidden shrink-0">
         {/* Concentric rings */}
-        <div className="absolute w-[440px] h-[440px] rounded-full border border-[var(--council-border)] pointer-events-none" />
-        <div className="absolute w-[300px] h-[300px] rounded-full border border-[var(--council-border)] pointer-events-none" />
+        <div className="absolute w-[440px] h-[440px] rounded-full border border-subtle pointer-events-none" />
+        <div className="absolute w-[300px] h-[300px] rounded-full border border-subtle pointer-events-none" />
 
         {/* Center Topic Pod */}
-        <div className="relative z-10 max-w-xs md:max-w-sm p-5 rounded-2xl bg-[var(--council-surface-1)] border border-[var(--council-border-strong)] shadow-xl text-center space-y-2">
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--council-text-muted)] block">
+        <div className="relative z-10 max-w-xs md:max-w-sm p-5 rounded-[16px] bg-surface-1 border border-subtle shadow-none text-center space-y-2">
+          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-text-tertiary block">
             Question under debate
           </span>
-          <h2 className="text-sm font-semibold text-[var(--council-text)] leading-snug line-clamp-3">
+          <h2 className="text-[15px] leading-[22px] font-semibold text-text-primary line-clamp-3">
             {topic || "What should the council deliberate?"}
           </h2>
           <div className="pt-1">
-            <span className="inline-block text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-[var(--council-surface-2)] text-[var(--council-accent)] font-semibold border border-[var(--council-border)]">
-              {activeSpeaker ? `Speaking: ${activeSpeaker}` : "Round in session"}
-            </span>
+            <StatusPill
+              variant={activeSpeaker ? "success" : "neutral"}
+              label={activeSpeaker ? `Speaking: ${activeSpeaker}` : "Round in session"}
+            />
           </div>
         </div>
 
@@ -149,54 +151,58 @@ function MemberArenaCard({
   return (
     <div
       style={{
-        borderTopColor: toneColor,
-        borderTopWidth: "2px",
+        borderLeftColor: toneColor,
+        borderLeftWidth: "2px",
       }}
-      className={`p-2.5 rounded-lg bg-[var(--council-surface-1)] border border-[var(--council-border)] shadow-md transition-all ${
+      className={`p-3 rounded-[12px] bg-surface-2 border border-subtle transition-colors duration-150 ${
         isActive
-          ? "ring-2 ring-[var(--council-accent)] shadow-lg scale-105"
+          ? "ring-1 ring-border-strong bg-surface-3"
           : member.is_muted
-          ? "opacity-50"
-          : ""
+          ? "opacity-55"
+          : "hover:border-strong"
       }`}
     >
       <div className="flex items-center justify-between gap-1">
-        <div className="flex items-center space-x-1.5 truncate">
+        <div className="flex items-center gap-1.5 truncate">
           <span
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: toneColor }}
           />
-          <strong className="text-xs text-[var(--council-text)] truncate">
+          <strong className="text-[13px] font-semibold text-text-primary truncate">
             {member.name}
           </strong>
           {member.is_chair && (
-            <Crown className="w-2.5 h-2.5 text-[var(--council-warning)] shrink-0" />
+            <StatusPill variant="warning" label="Chair" showDot={false} className="px-1 py-0 text-[9px]" />
           )}
         </div>
-        <div className="flex items-center space-x-0.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {!member.is_chair && (
             <button
               onClick={() => onToggleMute(member.name, member.is_muted)}
-              className="p-1 rounded text-[var(--council-text-muted)] hover:text-[var(--council-text)]"
+              className={`px-1.5 py-0.5 rounded-pill text-[10px] font-mono uppercase tracking-[0.06em] font-semibold transition-colors duration-150 ${
+                member.is_muted
+                  ? "bg-accent-danger-bg text-accent-danger border border-subtle"
+                  : "text-text-tertiary hover:text-text-primary"
+              }`}
             >
-              {member.is_muted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+              {member.is_muted ? "Muted" : "Mute"}
             </button>
           )}
           <button
             onClick={() => onEditMember(member)}
-            className="p-1 rounded text-[var(--council-text-muted)] hover:text-[var(--council-text)]"
+            className="p-1 rounded-pill text-text-tertiary hover:text-text-primary"
           >
-            <Type className="w-3 h-3" />
+            <Icon name="pencil" size={13} />
           </button>
         </div>
       </div>
-      <div className="mt-1 text-[10px] font-mono text-[var(--council-text-faint)] truncate">
+      <div className="mt-1 text-[11px] font-mono text-text-secondary truncate">
         {member.provider} · {member.model}
       </div>
       {isActive && (
-        <span className="mt-1.5 inline-block text-[9px] font-mono px-1.5 py-0.2 rounded bg-[var(--council-success-bg)] text-[var(--council-accent)]">
-          Speaking now
-        </span>
+        <div className="mt-1.5">
+          <StatusPill variant="success" label="Responding" />
+        </div>
       )}
     </div>
   );

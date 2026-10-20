@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Search, FileText, ArrowRight, RefreshCw, BookOpen } from "lucide-react";
+import { Icon } from "./Icon";
 import { SavedSessionItem } from "../types";
 import { fetchHistory } from "../api";
 
@@ -45,100 +45,97 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-sm animate-fade-in select-none">
-      <div className="w-full max-w-md bg-[var(--council-surface-1)] border-l border-[var(--council-border-strong)] h-full flex flex-col shadow-2xl transition-colors">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/80 backdrop-blur-sm animate-fade-in select-none">
+      <div className="w-full max-w-md bg-surface-1 border-l border-subtle h-full flex flex-col shadow-none transition-colors duration-150">
         {/* Header */}
-        <div className="p-4 border-b border-[var(--council-border)] flex items-center justify-between bg-[var(--council-surface-2)]">
-          <div className="flex items-center space-x-2">
-            <BookOpen className="w-4 h-4 text-[var(--council-accent)]" />
+        <div className="h-16 px-6 border-b border-subtle flex items-center justify-between bg-surface-1 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-text-tertiary">•</span>
             <div>
-              <h3 className="font-semibold text-sm text-[var(--council-text)]">
-                Debate history
+              <h3 className="text-[16px] leading-[24px] font-semibold text-text-primary">
+                Debate History
               </h3>
-              <p className="text-[10px] text-[var(--council-text-muted)]">
-                {sessions.length} sessions stored in ~/council-sessions/
+              <p className="text-[12px] leading-[16px] font-mono text-text-tertiary">
+                ~/council-sessions/ ({sessions.length})
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center gap-1">
             <button
               onClick={loadSessions}
-              className="p-1 rounded-md text-[var(--council-text-muted)] hover:text-[var(--council-text)] hover:bg-[var(--council-surface-3)] transition"
-              title="Refresh list"
+              className="p-1.5 rounded-pill text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors duration-150"
+              title="Refresh sessions"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              <Icon name="refresh-cw" size={16} className={loading ? "animate-spin" : ""} />
             </button>
             <button
               onClick={onClose}
-              className="p-1 rounded-md text-[var(--council-text-muted)] hover:text-[var(--council-text)] hover:bg-[var(--council-surface-3)] transition"
+              className="p-1.5 rounded-pill text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors duration-150"
+              title="Close drawer"
             >
-              <X className="w-4 h-4" />
+              <Icon name="x" size={16} />
             </button>
           </div>
         </div>
 
         {/* Search */}
-        <div className="p-3 border-b border-[var(--council-border)] bg-[var(--council-surface-2)]">
+        <div className="p-4 border-b border-subtle bg-surface-1">
           <div className="relative flex items-center">
-            <Search className="w-3.5 h-3.5 text-[var(--council-text-faint)] absolute left-3" />
+            <span className="absolute left-3 text-text-tertiary pointer-events-none">
+              <Icon name="search" size={15} />
+            </span>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search topics…"
-              className="w-full bg-[var(--council-surface-1)] border border-[var(--council-border)] rounded-md pl-9 pr-3 py-1.5 text-xs text-[var(--council-text)] placeholder-[var(--council-text-faint)] focus:outline-none focus:border-[var(--council-accent)]"
+              placeholder="Search past debates…"
+              className="w-full bg-surface-2 border border-subtle rounded-pill pl-9 pr-4 py-2 text-[13px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-strong transition-colors duration-150"
             />
           </div>
         </div>
 
-        {/* List */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {/* Sessions list in list-row style */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
           {loading ? (
-            <div className="p-8 text-center text-xs text-[var(--council-text-muted)] font-mono">
+            <div className="p-8 text-center text-[12px] font-mono text-text-tertiary">
               Loading session files…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="p-8 text-center text-xs text-[var(--council-text-muted)]">
+            <div className="p-8 text-center text-[13px] text-text-secondary">
               {search ? "No matching sessions found." : "No saved debates in ~/council-sessions/ yet."}
             </div>
           ) : (
-            filtered.map((item, idx) => (
-              <div
+            filtered.map((item) => (
+              <button
                 key={item.filepath}
-                className="p-3 rounded-lg border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:border-[var(--council-border-strong)] transition flex flex-col justify-between space-y-2"
+                onClick={() => {
+                  onResumeSession(item.filepath);
+                  onClose();
+                }}
+                className="w-full text-left group p-3.5 rounded-[12px] border border-subtle bg-surface-2 hover:border-strong transition-colors duration-150 flex items-center justify-between gap-3"
               >
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 rounded-full bg-[var(--council-surface-3)] border border-[var(--council-border)] flex items-center justify-center font-mono text-[10px] text-[var(--council-text-muted)] shrink-0">
-                    {String(idx + 1).padStart(2, "0")}
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] leading-[20px] font-semibold text-text-primary group-hover:text-text-primary transition-colors line-clamp-2">
+                    {item.topic}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-[var(--council-text)] line-clamp-2 leading-snug">
-                      {item.topic}
-                    </div>
-                    <div className="flex items-center space-x-2 text-[10px] text-[var(--council-text-faint)] mt-1 font-mono">
-                      <span>{item.date}</span>
-                      <span>·</span>
-                      <span>{item.message_count} entries</span>
-                    </div>
+                  <div className="flex items-center gap-2 text-[12px] leading-[16px] font-mono text-text-tertiary mt-1.5">
+                    <span>{item.date}</span>
+                    <span>·</span>
+                    <span>{item.message_count} turns</span>
+                    <span>·</span>
+                    <span className="truncate max-w-[120px]">{item.filename}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 border-t border-[var(--council-border)] text-xs">
-                  <code className="text-[10px] text-[var(--council-text-faint)] font-mono truncate max-w-[180px]">
-                    {item.filename}
-                  </code>
-                  <button
-                    onClick={() => {
-                      onResumeSession(item.filepath);
-                      onClose();
-                    }}
-                    className="flex items-center space-x-1 px-2.5 py-1 rounded bg-[var(--council-surface-1)] hover:bg-[var(--council-surface-hover)] border border-[var(--council-border)] text-[var(--council-text)] text-xs font-medium transition"
-                  >
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="h-8 px-3 rounded-pill bg-btn-secondary-bg hover:bg-btn-secondary-hover border border-subtle text-[12px] font-medium text-text-primary flex items-center gap-1.5 transition-colors duration-150">
                     <span>Reopen</span>
-                    <ArrowRight className="w-3 h-3 text-[var(--council-accent)]" />
-                  </button>
+                    <span className="text-text-tertiary group-hover:translate-x-0.5 transition-transform duration-150">
+                      <Icon name="chevron-right" size={14} />
+                    </span>
+                  </span>
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>

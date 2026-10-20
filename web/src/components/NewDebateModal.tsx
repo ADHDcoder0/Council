@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Play, Sparkles } from "lucide-react";
+import { Icon } from "./Icon";
 
 interface NewDebateModalProps {
   isOpen: boolean;
@@ -8,10 +8,22 @@ interface NewDebateModalProps {
 }
 
 const SAMPLE_TOPICS = [
-  "Should engineering teams prefer a modular monolith over microservices by default?",
-  "Will agent swarms make traditional workflow engines obsolete within 3 years?",
-  "Is Rust’s borrow checker worth the productivity cost for startup MVPs?",
-  "Should synthetic data be the default for local development and testing?",
+  {
+    title: "Should engineering teams prefer a modular monolith over microservices by default?",
+    description: "Deliberate boundary isolation, deployment complexity, and team scaling trade-offs.",
+  },
+  {
+    title: "Will agent swarms make traditional deterministic workflow engines obsolete within 3 years?",
+    description: "Contrast autonomous agency against reliability, auditing, and state machine guarantees.",
+  },
+  {
+    title: "Is Rust’s borrow checker worth the productivity cost for early-stage startup MVPs?",
+    description: "Compare developer velocity, runtime correctness, and memory safety implications.",
+  },
+  {
+    title: "Should synthetic data generation replace real production snapshots for local dev and testing?",
+    description: "Evaluate data privacy compliance, edge-case coverage, and pipeline maintenance overhead.",
+  },
 ];
 
 export const NewDebateModal: React.FC<NewDebateModalProps> = ({
@@ -33,103 +45,116 @@ export const NewDebateModal: React.FC<NewDebateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in select-none">
-      <div className="w-full max-w-lg bg-[var(--council-surface-1)] border border-[var(--council-border-strong)] rounded-xl flex flex-col shadow-2xl overflow-hidden transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in select-none">
+      <div className="w-full max-w-xl bg-surface-1 border border-subtle rounded-[16px] flex flex-col shadow-none overflow-hidden transition-colors duration-150">
         {/* Header */}
-        <div className="p-4 border-b border-[var(--council-border)] flex items-center justify-between bg-[var(--council-surface-2)]">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-[var(--council-accent)]" />
-            <h3 className="font-semibold text-sm text-[var(--council-text)]">
-              Start a new Council debate
+        <div className="h-14 px-6 border-b border-subtle flex items-center justify-between bg-surface-1">
+          <div className="flex items-center gap-2">
+            <span className="text-text-tertiary">•</span>
+            <h3 className="text-[16px] leading-[24px] font-semibold text-text-primary">
+              Start a New Debate
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-[var(--council-text-muted)] hover:text-[var(--council-text)] hover:bg-[var(--council-surface-3)] transition"
+            className="p-1.5 rounded-pill text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors duration-150"
           >
-            <X className="w-4 h-4" />
+            <Icon name="x" size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-[var(--council-text)] font-medium mb-1.5">
+            <label className="block text-[13px] leading-[18px] font-medium text-text-primary mb-1.5">
               Topic or Question
             </label>
             <textarea
               required
-              rows={4}
+              rows={3}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="What should the council deliberate?"
-              className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-lg p-2.5 text-[var(--council-text)] placeholder-[var(--council-text-faint)] focus:outline-none focus:border-[var(--council-accent)] text-xs leading-relaxed"
+              placeholder="What question should the council deliberate?"
+              className="w-full bg-surface-2 border border-subtle rounded-[12px] p-3 text-[14px] leading-[20px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-strong transition-colors duration-150"
             />
           </div>
 
-          {/* Sample Topic Chips */}
+          {/* Sample Topic List Rows with trailing chevron shifting 2px on hover */}
           <div>
-            <span className="text-[11px] text-[var(--council-text-muted)] block mb-1.5">
-              Or pick an idea to explore:
+            <span className="text-[12px] font-mono uppercase tracking-[0.06em] text-text-tertiary block mb-2">
+              Suggested Topics
             </span>
-            <div className="grid grid-cols-1 gap-1.5">
-              {SAMPLE_TOPICS.map((t, idx) => (
+            <div className="space-y-2">
+              {SAMPLE_TOPICS.map((item, idx) => (
                 <button
                   type="button"
                   key={idx}
-                  onClick={() => setTopic(t)}
-                  className="text-left text-[11px] px-2.5 py-1.5 rounded bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] text-[var(--council-text-muted)] hover:text-[var(--council-text)] border border-[var(--council-border)] transition line-clamp-1"
+                  onClick={() => setTopic(item.title)}
+                  className="w-full text-left group p-3.5 rounded-[12px] bg-surface-2 border border-subtle hover:border-strong transition-colors duration-150 flex items-center justify-between gap-3"
                 >
-                  {t}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] leading-[20px] font-semibold text-text-primary group-hover:text-text-primary transition-colors">
+                      {item.title}
+                    </div>
+                    <div className="text-[12px] leading-[16px] text-text-secondary mt-0.5">
+                      {item.description}
+                    </div>
+                  </div>
+                  <span className="text-text-tertiary group-hover:translate-x-0.5 transition-transform duration-150 shrink-0">
+                    <Icon name="chevron-right" size={16} />
+                  </span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-4 pt-1">
             <div>
-              <label className="block text-[var(--council-text)] font-medium mb-1">
+              <label className="block text-[13px] font-medium text-text-primary mb-1.5">
                 Words per turn
               </label>
               <select
                 value={words}
                 onChange={(e) => setWords(e.target.value)}
-                className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-md p-2 text-[var(--council-text)] text-xs focus:outline-none focus:border-[var(--council-accent)]"
+                className="w-full bg-surface-2 border border-subtle rounded-btn p-2.5 text-[13px] text-text-primary focus:outline-none focus:border-strong"
               >
                 <option value="80">80 words · concise</option>
                 <option value="120">120 words · balanced</option>
                 <option value="200">200 words · detailed</option>
               </select>
             </div>
+
             <div>
-              <label className="block text-[var(--council-text)] font-medium mb-1">
+              <label className="block text-[13px] font-medium text-text-primary mb-1.5">
                 Initial rounds
               </label>
               <select
                 value={rounds}
                 onChange={(e) => setRounds(e.target.value)}
-                className="w-full bg-[var(--council-surface-2)] border border-[var(--council-border)] rounded-md p-2 text-[var(--council-text)] text-xs focus:outline-none focus:border-[var(--council-accent)]"
+                className="w-full bg-surface-2 border border-subtle rounded-btn p-2.5 text-[13px] text-text-primary focus:outline-none focus:border-strong"
               >
                 <option value="1">1 round</option>
                 <option value="2">2 rounds</option>
                 <option value="3">3 rounds</option>
+                <option value="5">5 rounds</option>
               </select>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[var(--council-border)] flex items-center justify-end space-x-2">
+          {/* Footer: 40px buttons */}
+          <div className="pt-4 border-t border-subtle flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-md border border-[var(--council-border)] bg-[var(--council-surface-2)] hover:bg-[var(--council-surface-hover)] text-[var(--council-text-muted)] hover:text-[var(--council-text)] font-medium transition"
+              className="h-10 px-4 rounded-pill border border-subtle bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-text-primary text-[13px] font-medium transition-colors duration-150"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!topic.trim()}
-              className="flex items-center space-x-1.5 px-4 py-1.5 rounded-md bg-[var(--council-accent)] hover:opacity-90 disabled:opacity-40 text-[var(--bg-canvas)] font-semibold transition shadow-sm"
+              className="h-10 px-5 rounded-pill bg-btn-primary-bg text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-40 text-[13px] font-medium transition-colors duration-150 flex items-center gap-1.5"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
+              <Icon name="play" size={14} />
               <span>Begin debate</span>
             </button>
           </div>

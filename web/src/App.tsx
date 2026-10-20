@@ -11,6 +11,8 @@ import { SettingsModal } from "./components/SettingsModal";
 import { NewDebateModal } from "./components/NewDebateModal";
 import { EditMemberModal } from "./components/EditMemberModal";
 import { ApiKeysModal } from "./components/ApiKeysModal";
+import { Icon } from "./components/Icon";
+import { StatusPill } from "./components/StatusPill";
 import { useSSE } from "./hooks/useSSE";
 import {
   createSession,
@@ -22,7 +24,6 @@ import {
   fetchConfig,
 } from "./api";
 import { Direction, MemberInfo, SessionResponse, TranscriptEntry, getMemberTone } from "./types";
-import { Key } from "lucide-react";
 
 export function App() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -237,16 +238,16 @@ export function App() {
   const hasChair = members.some((m) => m.is_chair);
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--council-canvas)] text-[var(--council-text)] overflow-hidden font-sans transition-colors">
+    <div className="flex flex-col h-screen bg-canvas text-text-primary overflow-hidden font-sans transition-colors duration-150">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-16 right-4 z-50 px-3.5 py-2 bg-[var(--council-surface-1)] border border-[var(--council-border-strong)] text-[var(--council-text)] text-xs rounded-lg shadow-2xl flex items-center space-x-2 animate-fade-in font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--council-accent)]" />
+        <div className="fixed top-16 right-6 z-50 px-4 py-2 bg-surface-1 border border-strong text-text-primary text-[12px] font-mono rounded-pill shadow-none flex items-center gap-2 animate-fade-in">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent-success" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Redesigned App Header */}
+      {/* Top Bar Header */}
       <Header
         topic={session?.topic || ""}
         sessionId={session?.session_id || null}
@@ -265,21 +266,21 @@ export function App() {
       <div className="flex-1 flex overflow-hidden min-h-0 relative">
         {/* Missing API keys notification banner */}
         {!hasAnyKey && (
-          <div className="absolute top-2 left-4 right-4 z-20 px-3.5 py-2 rounded-lg bg-[var(--council-surface-1)] border border-[var(--council-warning)]/60 text-xs flex items-center justify-between shadow-lg">
-            <div className="flex items-center space-x-2 text-[var(--council-warning)]">
-              <Key className="w-4 h-4 shrink-0" />
-              <span>No API keys configured yet. Add your Anthropic, OpenAI, Gemini, or OpenRouter keys to run rounds.</span>
+          <div className="absolute top-3 left-4 right-4 z-20 px-4 py-2.5 rounded-[12px] bg-surface-1 border border-strong text-[13px] flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-text-secondary">
+              <Icon name="key-round" size={16} />
+              <span>No API keys configured yet. Add provider keys to start running debate rounds.</span>
             </div>
             <button
               onClick={() => setIsKeysOpen(true)}
-              className="px-2.5 py-1 rounded bg-[var(--council-accent)] text-[var(--bg-canvas)] font-semibold text-xs transition shrink-0 ml-3 shadow-sm hover:opacity-90"
+              className="h-8 px-3 rounded-pill bg-btn-primary-bg text-btn-primary-text hover:bg-btn-primary-hover text-[12px] font-medium transition-colors duration-150 shrink-0 ml-3"
             >
-              Enter keys
+              Configure keys
             </button>
           </div>
         )}
 
-        {/* Direction 1: The Deliberation (Thread reading mode) */}
+        {/* Long-form Deliberation thread mode */}
         {direction === "thread" && (
           <div className="flex-1 flex overflow-hidden">
             <MemberSidebar
@@ -288,16 +289,17 @@ export function App() {
               onToggleMute={handleToggleMute}
               onEditMember={(m) => setEditingMember(m)}
             />
-            <main className="flex-1 flex flex-col min-w-0 bg-[var(--council-canvas)]">
+            <main className="flex-1 flex flex-col min-w-0 bg-canvas">
               <TranscriptView
                 transcript={transcript}
                 topic={session?.topic || ""}
-                onRetrySpeaker={(name) => startStream("rounds", { rounds: 1 })}
+                onRetrySpeaker={() => startStream("rounds", { rounds: 1 })}
                 onOpenKeys={() => setIsKeysOpen(true)}
                 onNewDebate={() => setIsNewDebateOpen(true)}
               />
               <Composer
                 isStreaming={isStreaming}
+                activeSpeaker={activeSpeaker}
                 onSendMessage={handleSendMessage}
                 onRunRound={(rounds) => startStream("rounds", { rounds })}
                 onRunSummary={() => startStream("summary", {})}
@@ -310,7 +312,7 @@ export function App() {
           </div>
         )}
 
-        {/* Direction 2: The Workbench (3-panel modular workspace) */}
+        {/* Workbench mode */}
         {direction === "workbench" && (
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <WorkbenchView
@@ -321,12 +323,13 @@ export function App() {
               totals={totals}
               onToggleMute={handleToggleMute}
               onEditMember={(m) => setEditingMember(m)}
-              onRetrySpeaker={(name) => startStream("rounds", { rounds: 1 })}
+              onRetrySpeaker={() => startStream("rounds", { rounds: 1 })}
               onOpenKeys={() => setIsKeysOpen(true)}
               onNewDebate={() => setIsNewDebateOpen(true)}
             />
             <Composer
               isStreaming={isStreaming}
+              activeSpeaker={activeSpeaker}
               onSendMessage={handleSendMessage}
               onRunRound={(rounds) => startStream("rounds", { rounds })}
               onRunSummary={() => startStream("summary", {})}
@@ -338,7 +341,7 @@ export function App() {
           </div>
         )}
 
-        {/* Direction 3: The Roundtable (Arena mode) */}
+        {/* Spatial Roundtable mode */}
         {direction === "arena" && (
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <ArenaView
@@ -348,12 +351,13 @@ export function App() {
               activeSpeaker={activeSpeaker}
               onToggleMute={handleToggleMute}
               onEditMember={(m) => setEditingMember(m)}
-              onRetrySpeaker={(name) => startStream("rounds", { rounds: 1 })}
+              onRetrySpeaker={() => startStream("rounds", { rounds: 1 })}
               onOpenKeys={() => setIsKeysOpen(true)}
               onNewDebate={() => setIsNewDebateOpen(true)}
             />
             <Composer
               isStreaming={isStreaming}
+              activeSpeaker={activeSpeaker}
               onSendMessage={handleSendMessage}
               onRunRound={(rounds) => startStream("rounds", { rounds })}
               onRunSummary={() => startStream("summary", {})}
@@ -393,9 +397,7 @@ export function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onConfigSaved={() => {
-          fetchConfig().then((cfg) => {
-            // refresh
-          }).catch(console.error);
+          fetchConfig().catch(console.error);
         }}
       />
 

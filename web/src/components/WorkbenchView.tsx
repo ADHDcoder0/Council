@@ -1,8 +1,9 @@
 import React from "react";
-import { MemberInfo, TranscriptEntry, getMemberTone } from "../types";
+import { MemberInfo, TranscriptEntry } from "../types";
 import { MemberSidebar } from "./MemberSidebar";
 import { TranscriptView } from "./TranscriptView";
-import { Cpu, DollarSign, Activity, CheckCircle2, ShieldAlert } from "lucide-react";
+import { StatusPill } from "./StatusPill";
+import { Icon } from "./Icon";
 
 interface WorkbenchViewProps {
   members: MemberInfo[];
@@ -39,7 +40,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
   const progressPercent = Math.min(100, Math.round((totals.totalCostUsd / maxBudget) * 100));
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-[var(--council-canvas)]">
+    <div className="flex-1 flex overflow-hidden bg-canvas">
       {/* Panel 1: Roster Rail */}
       <MemberSidebar
         members={members}
@@ -49,9 +50,12 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
       />
 
       {/* Panel 2: Transcript Stream */}
-      <div className="flex-1 flex flex-col min-w-0 border-r border-[var(--council-border)] overflow-hidden">
-        <div className="p-2.5 px-4 border-b border-[var(--council-border)] bg-[var(--council-surface-1)] font-mono text-[11px] text-[var(--council-text-muted)] uppercase tracking-wider flex items-center justify-between">
-          <span>Deliberation Transcript</span>
+      <div className="flex-1 flex flex-col min-w-0 border-r border-subtle overflow-hidden">
+        <div className="p-3 px-6 border-b border-subtle bg-surface-1 font-mono text-[12px] text-text-tertiary flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <span className="text-text-tertiary">•</span>
+            <span>Transcript</span>
+          </span>
           <span>{transcript.length} turns</span>
         </div>
         <TranscriptView
@@ -64,18 +68,19 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
       </div>
 
       {/* Panel 3: Live Inspector & Diagnostics */}
-      <aside className="hidden xl:flex w-80 flex-col bg-[var(--council-surface-1)] p-4 overflow-y-auto space-y-4 shrink-0 select-none">
-        <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--council-text-muted)]">
-          Live Diagnostics Inspector
+      <aside className="hidden xl:flex w-80 flex-col bg-surface-1 p-4 overflow-y-auto space-y-4 shrink-0 select-none">
+        <div className="text-[14px] leading-[20px] font-semibold text-text-primary flex items-center gap-2">
+          <span className="text-text-tertiary">•</span>
+          <span>Diagnostics Inspector</span>
         </div>
 
         {/* Active speaker card */}
         {activeMember && (
-          <div className="p-3.5 rounded-lg bg-[var(--council-surface-2)] border border-[var(--council-border)] space-y-2">
-            <span className="text-[10px] font-mono uppercase text-[var(--council-text-faint)] block">
-              Active Member Focus
+          <div className="p-3.5 rounded-[12px] bg-surface-2 border border-subtle space-y-2">
+            <span className="text-[11px] font-mono uppercase text-text-tertiary block">
+              Member Focus
             </span>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <span
                 className="w-2.5 h-2.5 rounded-full"
                 style={{
@@ -89,70 +94,63 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                       : "var(--member-builder)",
                 }}
               />
-              <strong className="text-xs text-[var(--council-text)]">
+              <strong className="text-[14px] leading-[20px] font-semibold text-text-primary">
                 {activeMember.name}
               </strong>
               {activeMember.is_chair && (
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--council-surface-3)] text-[var(--council-warning)]">
-                  Chair
-                </span>
+                <StatusPill variant="warning" label="Chair" showDot={false} />
               )}
             </div>
-            <div className="text-[11px] font-mono text-[var(--council-text-faint)]">
+            <div className="text-[12px] font-mono text-text-secondary">
               {activeMember.provider} · {activeMember.model}
             </div>
-            <p className="text-[11px] text-[var(--council-text-muted)] line-clamp-3 leading-relaxed">
+            <p className="text-[13px] leading-[18px] text-text-secondary line-clamp-3">
               {activeMember.role}
             </p>
           </div>
         )}
 
         {/* Cost Meter Gauge */}
-        <div className="p-3.5 rounded-lg bg-[var(--council-surface-2)] border border-[var(--council-border)] space-y-2.5">
+        <div className="p-3.5 rounded-[12px] bg-surface-2 border border-subtle space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono uppercase text-[var(--council-text-faint)]">
-              Session Cost
+            <span className="text-[11px] font-mono uppercase text-text-tertiary">
+              Cost Meter
             </span>
-            <span
-              className={`text-[9px] font-mono uppercase px-1.5 py-0.2 rounded ${
-                totals.isEstimated
-                  ? "bg-amber-950/40 text-amber-400 border border-amber-800/40"
-                  : "bg-[var(--council-success-bg)] text-[var(--council-accent)]"
-              }`}
-            >
-              {totals.isEstimated ? "Estimated" : "Exact"}
-            </span>
+            <StatusPill
+              variant={totals.isEstimated ? "warning" : "success"}
+              label={totals.isEstimated ? "ESTIMATED" : "EXACT"}
+            />
           </div>
 
-          <div className="font-mono text-xl font-bold text-[var(--council-text)]">
+          <div className="font-mono text-[20px] font-semibold text-text-primary">
             ${totals.totalCostUsd.toFixed(4)}
           </div>
 
           {/* Budget progress bar */}
           <div className="space-y-1">
-            <div className="w-full h-1.5 bg-[var(--council-surface-3)] rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-surface-3 rounded-pill overflow-hidden">
               <div
-                className="h-full bg-[var(--council-accent)] transition-all duration-300"
+                className="h-full bg-accent-success transition-all duration-300"
                 style={{ width: `${Math.max(5, progressPercent)}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] font-mono text-[var(--council-text-faint)]">
+            <div className="flex justify-between text-[11px] font-mono text-text-tertiary">
               <span>Used: {progressPercent}%</span>
-              <span>Limit: ${maxBudget.toFixed(4)}</span>
+              <span>Ref limit: ${maxBudget.toFixed(4)}</span>
             </div>
           </div>
 
           {/* Stats grid */}
-          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--council-border)] text-[10px] font-mono">
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-subtle text-[12px] font-mono">
             <div>
-              <span className="text-[var(--council-text-faint)] block">Input tokens</span>
-              <span className="text-[var(--council-text)] font-semibold">
+              <span className="text-text-tertiary block">Input tokens</span>
+              <span className="text-text-primary font-medium">
                 {totals.inputTokens.toLocaleString()}
               </span>
             </div>
             <div>
-              <span className="text-[var(--council-text-faint)] block">Output tokens</span>
-              <span className="text-[var(--council-text)] font-semibold">
+              <span className="text-text-tertiary block">Output tokens</span>
+              <span className="text-text-primary font-medium">
                 {totals.outputTokens.toLocaleString()}
               </span>
             </div>
@@ -160,13 +158,13 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
         </div>
 
         {/* Diagnostics & Pricing Notes */}
-        <div className="p-3 rounded-lg bg-[var(--council-surface-2)] border border-[var(--council-border)] text-[10px] text-[var(--council-text-muted)] space-y-1.5 leading-relaxed">
-          <div className="flex items-center space-x-1 font-semibold text-[var(--council-text)]">
-            <Activity className="w-3 h-3 text-[var(--council-accent)]" />
+        <div className="p-3.5 rounded-[12px] bg-surface-2 border border-subtle text-[12px] leading-[18px] text-text-secondary space-y-1.5">
+          <div className="flex items-center gap-1.5 font-semibold text-text-primary">
+            <Icon name="file-text" size={14} />
             <span>Usage Telemetry</span>
           </div>
           <p>
-            Provider SSE streaming reports exact input & output tokens for Anthropic and OpenAI. Fallback heuristic (1.3 tok/word) is used only when providers omit usage blocks.
+            SSE streams stream exact usage blocks for Anthropic and OpenAI. Fallback heuristic (1.3 tok/word) is applied only when providers omit usage fields.
           </p>
         </div>
       </aside>
